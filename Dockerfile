@@ -1,5 +1,5 @@
-# 构建阶段：稳定版 Rust + GitHub 上游 topcoat（主分支，随上游更新）
-FROM rustlang/rust:stable AS builder
+# 构建阶段：最新稳定版 Rust + GitHub 上游 topcoat（主分支，随上游更新）
+FROM rust:latest AS builder
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends cmake perl \

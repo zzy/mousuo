@@ -6,18 +6,17 @@
 //! 登出时删除 session 记录并清除 cookie。
 
 use argon2::{
+    password_hash::{PasswordHasher, PasswordVerifier},
     Argon2,
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 use topcoat::context::Cx;
 
 use crate::common::session as session_db;
 
-/// Argon2id 哈希凭证（PHC 字符串，含随机盐）
+/// Argon2id 哈希凭证（PHC 字符串，随机盐自动生成）
 pub fn hash_credential(password: &str) -> String {
-    let salt = SaltString::generate(&mut OsRng);
     Argon2::default()
-        .hash_password(password.as_bytes(), &salt)
+        .hash_password(password.as_bytes())
         .expect("Argon2 哈希失败")
         .to_string()
 }
@@ -31,11 +30,9 @@ pub fn password_strong(password: &str) -> bool {
 
 /// 校验凭证
 pub fn verify_credential(password: &str, stored_cred: &str) -> bool {
-    PasswordHash::new(stored_cred).ok().map_or(false, |h| {
-        Argon2::default()
-            .verify_password(password.as_bytes(), &h)
-            .is_ok()
-    })
+    Argon2::default()
+        .verify_password(password.as_bytes(), stored_cred)
+        .is_ok()
 }
 
 /// 登录：创建 session → DB 写入 (hash, username, expires_at)
