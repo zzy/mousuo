@@ -1,0 +1,44 @@
+[package]
+name = "mousuo"
+version = "0.1.0"
+edition = "2024"
+description = "MouSuo — 跨境电商试水"
+
+[dependencies]
+topcoat = { path = "../tmp/topcoat/crates/topcoat", features = [
+    "tailwind",
+    "multipart",
+    "mail",
+    "mail-smtp",
+    "ui",
+    "font-fontsource",
+    "icon-iconify",
+    "sse",
+    "tower",
+] }
+futures-util = "0.3"
+surrealdb = "3"
+tokio     = { version = "1", features = ["rt-multi-thread", "macros"] }
+tower-http = { version = "0.7", features = ["trace"] }
+icu       = { version = "2", features = ["compiled_data", "sync"] }
+serde     = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+argon2 = "0.6"
+base64 = "0.23"
+aws-lc-rs = "1"
+
+uuid           = { version = "1", features = ["v4"] }
+dotenvy        = "0.15"
+chrono         = "0.4"
+pulldown-cmark = "0.13"
+anyhow         = "1"
+async-stripe   = { version = "0.41", features = ["runtime-tokio-hyper"] }
+
+[build-dependencies]
+topcoat = { path = "../tmp/topcoat/crates/topcoat", default-features = false, features = ["tailwind", "icon-iconify"] }
+icu     = { version = "2", features = ["compiled_data", "sync"] }
+
+[profile.release]
+lto          = "thin"
+codegen-units = 1

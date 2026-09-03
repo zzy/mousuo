@@ -1,0 +1,6 @@
+/target
+.env
+.topcoat-cache
+data/
+*.log
+.DS_Store

@@ -1,0 +1,16 @@
+services:
+  app:
+    image: ghcr.io/zzy/mousuo:latest
+    restart: always
+    ports:
+      - "7800:7800"
+    env_file:
+      - .env
+    volumes:
+      - /root/mousuo-uploads:/app/data/media
+    networks:
+      - surrealdb_net
+
+networks:
+  surrealdb_net:
+    external: true

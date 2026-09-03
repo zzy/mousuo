@@ -1,0 +1,10 @@
+target/
+.cargo/
+.git/
+.gitignore
+*.md
+LICENSE
+data/
+scripts/
+.env
+.topcoat-cache/tailwind/

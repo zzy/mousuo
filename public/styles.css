@@ -1,0 +1,105 @@
+/* Neutral 主题 — Topcoat + CanGnu 品牌色 */
+
+@import "tailwindcss";
+@source "./src/**/*.rs";
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Geist", sans-serif;
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+}
+
+:root {
+  --background: #f9fafb;
+  --surface: #fff;
+  --foreground: #1f2937;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --primary: #2563eb;
+  --primary-foreground: #fff;
+  --destructive: #ef4444;
+  --destructive-foreground: #fff;
+  --border: #e5e7eb;
+  --ring: #2563eb;
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.1);
+}
+
+.dark {
+  --background: #111827;
+  --surface: #1f2937;
+  --foreground: #f3f4f6;
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
+  --primary: #60a5fa;
+  --primary-foreground: #111827;
+  --destructive: #f87171;
+  --destructive-foreground: #111827;
+  --border: #374151;
+  --ring: #60a5fa;
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.35);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
+}
+
+@layer base {
+  body { @apply bg-background text-foreground; }
+}
+
+/* ── 弹窗 ──────────────────────────────────────────────────────── */
+
+.modal-overlay {
+  position: absolute; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.55); border-radius: 8px;
+}
+.modal-card {
+  background: var(--surface); border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.12);
+  text-align: center; padding: 32px 24px;
+  width: 91.6%; max-width: 28rem; margin: 0 auto;
+}
+.modal-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: #ecfdf5; margin-bottom: 20px; font-size: 30px; color: #16a34a;
+}
+.modal-text {
+  color: #15803d; font-weight: 500; line-height: 1.7;
+  font-size: 15px; margin-bottom: 8px; white-space: pre-line;
+}
+.modal-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
+.dark .modal-overlay { background: rgba(0,0,0,.55); }
+.dark .modal-icon { background: rgba(5,150,105,.2); color: #4ade80; }
+.dark .modal-text { color: #4ade80; }
+
+/* ── 辅助 ──────────────────────────────────────────────────────── */
+
+.prose-sm { font-size: .875rem; line-height: 1.7; color: var(--foreground); }
+.prose-sm h1, .prose-sm h2, .prose-sm h3 { font-weight: 600; margin: 1.5em 0 .5em; }
+.prose-sm p { margin-bottom: 1em; }
+.prose-sm img { max-width: 100%; }
+
+/* ── 表单工具类（非组件场景） ─────────────────────────────────── */
+
+.form-input {
+  width: 100%; padding: .5rem .75rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--foreground);
+  font-size: .875rem; outline: 0;
+}
+.form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 15%, transparent);
+}
