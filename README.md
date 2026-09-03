@@ -1,4 +1,4 @@
-# [MouSuo](https://mousuo.com)
+# MouSuo ( 眸索, Sight & Seek )
 
 A cross-border e-commerce trial built on [topcoat](https://github.com/tokio-rs/topcoat) and [surrealdb](https://surrealdb.com/) — all Rust, single binary.
 
