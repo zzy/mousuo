@@ -1,11 +1,13 @@
-# MouSuo
+# [MouSuo](https://mousuo.com)
 
-A cross-border e-commerce trial built on [topcoat](https://github.com/tokio-rs/topcoat) and [SurrealDB](https://surrealdb.com/) — all Rust, single binary.
+A cross-border e-commerce trial built on [topcoat](https://github.com/tokio-rs/topcoat) and [surrealdb](https://surrealdb.com/) — all Rust, single binary.
+
+Demo: https://mousuo.com
 
 ## Stack
 
 - [topcoat](https://github.com/tokio-rs/topcoat) — routing, rendering, sessions, SSE, Tailwind assets
-- [SurrealDB](https://surrealdb.com/) — schemafull tables, created idempotently at startup
+- [surrealdb](https://surrealdb.com/) — schemafull tables, created idempotently at startup
 - i18n — locales compiled into the binary; root serves directly, `/{locale}` paths; browser negotiation + cookie memory (en default, zh)
 
 ## Features
@@ -17,7 +19,7 @@ A cross-border e-commerce trial built on [topcoat](https://github.com/tokio-rs/t
 
 ## Develop
 
-Requires stable Rust, a SurrealDB instance, and topcoat source at `../tmp/topcoat` (pull latest).
+Requires stable Rust, a surrealdb instance, and topcoat source at `../tmp/topcoat` (pull latest).
 
 ```sh
 PORT=7800; topcoat dev   # http://127.0.0.1:7800
@@ -35,7 +37,7 @@ docker compose up -d
 ```
 
 - Port `7800`; uploads volume `/root/mousuo-uploads:/app/data/media`
-- External network `surrealdb_net`; server `.env` sets `DB_URL` to the SurrealDB container
+- External network `surrealdb_net`; server `.env` sets `DB_URL` to the surrealdb container
 - nginx: no rewrites (locale negotiation is in-app), disable buffering, raise timeouts (SSE, video upload)
 
 ## License
