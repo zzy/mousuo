@@ -28,7 +28,7 @@ use topcoat::{
         content::Form, error::{bad_request, forbidden}, path_param_segment, query_params, response::Response,
     },
     runtime::Event,
-    view::{attributes, component, view},
+    view::{View, attributes, component, view},
 };
 
 #[derive(Deserialize)]
@@ -44,7 +44,7 @@ pub struct RegisterForm {
 }
 
 #[topcoat::router::page("/{locale}/register")]
-pub async fn register_page(cx: &Cx) -> Result {
+pub async fn register_page(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     // 先签发 session（否则验证码/CSRF 无处存放）
     let _ = topcoat::session::start(cx).await;
@@ -62,7 +62,7 @@ pub async fn register_page(cx: &Cx) -> Result {
     let success_username =
         form::query_param(cx, "username").filter(|_| form::query_param(cx, "success").is_some());
     let mail_failed = form::query_param(cx, "mail").is_some();
-    view! {
+    Ok(view! {
         RegisterCard(
             locale: locale.to_string(),
             error_message: error_message,
@@ -70,7 +70,7 @@ pub async fn register_page(cx: &Cx) -> Result {
             mail_failed: mail_failed,
             csrf: csrf
         )
-    }
+    })
 }
 
 #[topcoat::router::route(POST "/{locale}/register")]
@@ -143,7 +143,7 @@ struct ActivateQuery {
 
 /// 账户激活页
 #[topcoat::router::page("/{locale}/users/activate")]
-pub async fn activate_page(cx: &Cx) -> Result {
+pub async fn activate_page(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let params = query_params::<ActivateQuery>(cx).ok();
     let (success, message) = match params
@@ -156,7 +156,7 @@ pub async fn activate_page(cx: &Cx) -> Result {
         },
         None => (false, loader::t(&locale, "page_error_404").to_string()),
     };
-    view! {
+    Ok(view! {
         <main class="min-h-[80vh] flex items-center justify-center px-4">
             card(
                 attrs: attributes! { class="p-8 text-center max-w-md" },
@@ -167,10 +167,7 @@ pub async fn activate_page(cx: &Cx) -> Result {
                     <p class="text-foreground mb-4">(message)</p>
                     <a
                         href=(format!("/{locale}/sign-in"))
-                        class=(button_variants(
-                            ButtonVariant::Primary,
-                            ButtonSize::Md,
-                        ))
+                        class=(button_variants(ButtonVariant::Primary, ButtonSize::Md))
                     >
                         (loader::t(&locale, "sign_in"))
                     </a>
@@ -182,12 +179,12 @@ pub async fn activate_page(cx: &Cx) -> Result {
                 }
             )
         </main>
-    }
+    })
 }
 
 /// 激活邮件重发页（带验证码）；account 由签入页 not_activation 入口带入
 #[topcoat::router::page("/{locale}/users/resend")]
-pub async fn resend_page(cx: &Cx) -> Result {
+pub async fn resend_page(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let captcha = captcha::generate();
     // 先签发 session（否则验证码无处存放），再将答案写入 session
@@ -199,7 +196,7 @@ pub async fn resend_page(cx: &Cx) -> Result {
     let account = form::query_param(cx, "account").unwrap_or_default();
     let sent = form::query_param(cx, "sent").is_some();
     let send_error = form::query_param(cx, "error").is_some();
-    view! {
+    Ok(view! {
         <main class="max-w-md mx-auto px-4 py-8">
             card(
                 attrs: attributes! { class="p-6" },
@@ -259,7 +256,7 @@ pub async fn resend_page(cx: &Cx) -> Result {
                 </form>
             )
         </main>
-    }
+    })
 }
 
 #[derive(Deserialize)]
@@ -302,10 +299,10 @@ async fn RegisterCard(
     success_username: Option<String>,
     mail_failed: bool,
     csrf: String,
-) -> Result {
+) -> Result<impl View> {
     let intro_default = "## About Me".to_string();
     let cap_locale = locale.clone();
-    view! {
+    Ok(view! {
         signal captcha_nonce = 0.0;
         auth_dialog(
             locale: locale.clone(),
@@ -325,7 +322,10 @@ async fn RegisterCard(
                     <form
                         method="POST"
                         action=""
-                        onsubmit=(format!("var b=this.querySelector('button[type=submit]');if(b){{b.disabled=true;b.textContent='{}'}}", loader::t(&locale, "submitting")))
+                        onsubmit=(format!(
+                            "var b=this.querySelector('button[type=submit]');if(b){{b.disabled=true;b.textContent='{}'}}",
+                            loader::t(&locale, "submitting"),
+                        ))
                     >
                         <input type="hidden" name="lang" value=(locale.as_str())>
                         CsrfField(token: csrf.clone())
@@ -379,10 +379,7 @@ async fn RegisterCard(
                             <div class="space-y-1">
                                 label(
                                     attrs: attributes! {},
-                                    (loader::t(
-                                        &locale,
-                                        "register_confirm_password",
-                                    ))
+                                    (loader::t(&locale, "register_confirm_password"))
                                     " *"
                                 )
                                 input(
@@ -502,5 +499,5 @@ async fn RegisterCard(
                 }
             </div>
         )
-    }
+    })
 }

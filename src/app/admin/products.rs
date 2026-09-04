@@ -22,7 +22,7 @@ use topcoat::{
     Result,
     context::Cx,
     router::{content::Form, error::forbidden, page, path_param_segment, query_params, response::Response},
-    view::{attributes, component, view},
+    view::{View, attributes, component, view},
 };
 
 /// 商品表单（创建/编辑共用）
@@ -100,7 +100,7 @@ pub struct AdminProductsQuery {
 
 /// 商品管理列表（含下架）
 #[page("/{locale}/admin/products")]
-pub async fn admin_products_list(cx: &Cx) -> Result {
+pub async fn admin_products_list(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let loc = locale.to_string();
     let params = query_params::<AdminProductsQuery>(cx).ok();
@@ -126,7 +126,7 @@ pub async fn admin_products_list(cx: &Cx) -> Result {
             ("invalid", "admin_product_invalid"),
         ],
     );
-    view! {
+    Ok(view! {
         <div class="max-w-6xl mx-auto px-4 py-8">
             components::admin_nav::AdminNav(
                 locale: loc.clone(),
@@ -138,10 +138,7 @@ pub async fn admin_products_list(cx: &Cx) -> Result {
                 </h1>
                 <a
                     href=(format!("/{locale}/admin/products/new"))
-                    class=(button_variants(
-                        ButtonVariant::Primary,
-                        ButtonSize::Md,
-                    ))
+                    class=(button_variants(ButtonVariant::Primary, ButtonSize::Md))
                 >
                     (loader::t(&locale, "admin_product_create"))
                 </a>
@@ -155,7 +152,10 @@ pub async fn admin_products_list(cx: &Cx) -> Result {
                 </p>
             } else {
                 <div class="space-y-2">
-                    for ((product, lc), tok) in product_list.into_iter().zip(locales).zip(csrfs) {
+                    for ((product, lc), tok) in product_list
+                        .into_iter()
+                        .zip(locales)
+                        .zip(csrfs) {
                         AdminProductRow(locale: lc, product: product, csrf: tok)
                     }
                 </div>
@@ -166,17 +166,17 @@ pub async fn admin_products_list(cx: &Cx) -> Result {
                 )
             }
         </div>
-    }
+    })
 }
 
 /// 单行商品：标题/slug/价格/库存/状态 + 编辑/上下架/删除
 #[component]
-async fn AdminProductRow(locale: String, product: Product, csrf: String) -> Result {
+async fn AdminProductRow(locale: String, product: Product, csrf: String) -> Result<impl View> {
     let is_active = product.status == PRODUCT_STATUS_ACTIVE;
     let status_url = format!("/{locale}/admin/products/{}/status", product.id);
     let delete_url = format!("/{locale}/admin/products/{}/delete", product.id);
     let edit_url = format!("/{locale}/admin/products/{}/edit", product.id);
-    view! {
+    Ok(view! {
         <div
             class="bg-surface border border-border rounded-lg p-4 flex flex-wrap items-center gap-3"
         >
@@ -209,10 +209,7 @@ async fn AdminProductRow(locale: String, product: Product, csrf: String) -> Resu
                 }
                 <a
                     href=(edit_url)
-                    class=(button_variants(
-                        ButtonVariant::Secondary,
-                        ButtonSize::Sm,
-                    ))
+                    class=(button_variants(ButtonVariant::Secondary, ButtonSize::Sm))
                 >
                     (loader::t(&locale, "admin_product_edit"))
                 </a>
@@ -220,10 +217,7 @@ async fn AdminProductRow(locale: String, product: Product, csrf: String) -> Resu
                     CsrfField(token: csrf.clone())
                     <button
                         type="submit"
-                        class=(button_variants(
-                            ButtonVariant::Secondary,
-                            ButtonSize::Sm,
-                        ))
+                        class=(button_variants(ButtonVariant::Secondary, ButtonSize::Sm))
                     >
                         (loader::t(
                             &locale,
@@ -243,23 +237,26 @@ async fn AdminProductRow(locale: String, product: Product, csrf: String) -> Resu
                             ButtonVariant::Destructive,
                             ButtonSize::Sm,
                         ))
-                        onclick=(format!("return confirm('{}')", loader::t(&locale, "admin_confirm_delete")))
+                        onclick=(format!(
+                            "return confirm('{}')",
+                            loader::t(&locale, "admin_confirm_delete"),
+                        ))
                     >
                         (loader::t(&locale, "admin_product_delete"))
                     </button>
                 </form>
             </div>
         </div>
-    }
+    })
 }
 
 /// 创建页
 #[page("/{locale}/admin/products/new")]
-pub async fn admin_product_new_page(cx: &Cx) -> Result {
+pub async fn admin_product_new_page(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let error_message = form::error_message(cx, &locale, &FORM_ERROR_KEYS);
     let csrf = session::ensure_csrf_token(cx).await.unwrap_or_default();
-    view! {
+    Ok(view! {
         ProductFormView(
             locale: locale.to_string(),
             action_url: format!("/{locale}/admin/products"),
@@ -276,19 +273,19 @@ pub async fn admin_product_new_page(cx: &Cx) -> Result {
             error_message: error_message,
             csrf: csrf
         )
-    }
+    })
 }
 
 /// 编辑页
 #[page("/{locale}/admin/products/{id}/edit")]
-pub async fn admin_product_edit_page(cx: &Cx) -> Result {
+pub async fn admin_product_edit_page(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let product_id = path_param_segment(cx, "id");
     let error_message = form::error_message(cx, &locale, &FORM_ERROR_KEYS);
     let csrf = session::ensure_csrf_token(cx).await.unwrap_or_default();
     let found = products::get_product_by_id(&product_id).await.ok().flatten();
-    match found {
-        Some(product) => view! {
+    Ok(view! {
+        if let Some(product) = found {
             ProductFormView(
                 locale: locale.to_string(),
                 action_url: format!("/{locale}/admin/products/{product_id}"),
@@ -305,8 +302,7 @@ pub async fn admin_product_edit_page(cx: &Cx) -> Result {
                 error_message: error_message,
                 csrf: csrf
             )
-        },
-        None => view! {
+        } else {
             (topcoat::router::StatusCode::NOT_FOUND)
             <div class="max-w-3xl mx-auto px-4 py-16 text-center">
                 <h1 class="text-2xl font-bold text-foreground mb-4">"404"</h1>
@@ -314,8 +310,8 @@ pub async fn admin_product_edit_page(cx: &Cx) -> Result {
                     (loader::t(&locale, "page_error_404"))
                 </p>
             </div>
-        },
-    }
+        }
+    })
 }
 
 /// 商品表单组件（创建/编辑共用）
@@ -328,8 +324,8 @@ async fn ProductFormView(
     values: ProductFormValues,
     error_message: Option<String>,
     csrf: String,
-) -> Result {
-    view! {
+) -> Result<impl View> {
+    Ok(view! {
         <div class="max-w-3xl mx-auto px-4 py-8">
             components::admin_nav::AdminNav(
                 locale: locale.clone(),
@@ -444,17 +440,14 @@ async fn ProductFormView(
                     </div>
                     <button
                         type="submit"
-                        class=(button_variants(
-                            ButtonVariant::Primary,
-                            ButtonSize::Md,
-                        ))
+                        class=(button_variants(ButtonVariant::Primary, ButtonSize::Md))
                     >
                         (submit_label)
                     </button>
                 </form>
             )
         </div>
-    }
+    })
 }
 
 /// 创建提交

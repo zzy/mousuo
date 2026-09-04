@@ -18,7 +18,7 @@ use topcoat::{
     Result,
     context::Cx,
     router::{page, path_param_segment, query_params},
-    view::{attributes, class, component, view},
+    view::{View, attributes, class, component, view},
 };
 
 #[query_params]
@@ -29,7 +29,7 @@ pub struct OrdersQuery {
 
 /// 我的订单列表（LoginGuard 层保证已登录）
 #[page("/{locale}/orders")]
-pub async fn orders_list(cx: &Cx) -> Result {
+pub async fn orders_list(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let loc = locale.to_string();
     let username = auth::current_user(cx)
@@ -45,7 +45,7 @@ pub async fn orders_list(cx: &Cx) -> Result {
         .unwrap_or_default();
     let n = order_list.len();
     let locales: Vec<String> = std::iter::repeat(loc.clone()).take(n).collect();
-    view! {
+    Ok(view! {
         <div class="max-w-4xl mx-auto px-4 py-8">
             <h1 class="text-xl font-bold mb-6 text-foreground">
                 (loader::t(&locale, "my_orders"))
@@ -75,13 +75,13 @@ pub async fn orders_list(cx: &Cx) -> Result {
                 )
             }
         </div>
-    }
+    })
 }
 
 #[component]
-async fn OrderRow(locale: String, order: Order) -> Result {
+async fn OrderRow(locale: String, order: Order) -> Result<impl View> {
     let created_date: String = order.created_at.chars().take(10).collect();
-    view! {
+    Ok(view! {
         <a
             href=(format!("/{locale}/orders/{}", order.id))
             class="bg-surface border border-border rounded-lg shadow-xs overflow-hidden no-underline hover:shadow-md transition-shadow block"
@@ -108,13 +108,13 @@ async fn OrderRow(locale: String, order: Order) -> Result {
                 </div>
             </div>
         </a>
-    }
+    })
 }
 
 /// 支付结果页：GET /{locale}/orders/{id}?result=success|cancel
 /// （LoginGuard 层保证已登录；本页校验订单归属，非本人 404）
 #[page("/{locale}/orders/{id}")]
-pub async fn order_detail(cx: &Cx) -> Result {
+pub async fn order_detail(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let order_id = path_param_segment(cx, "id");
     let username = auth::current_user(cx)
@@ -146,7 +146,7 @@ pub async fn order_detail(cx: &Cx) -> Result {
         },
         None => None,
     };
-    view! {
+    Ok(view! {
         <div class="max-w-3xl mx-auto px-4 py-8">
             if !is_owner || found.is_none() {
                 (topcoat::router::StatusCode::NOT_FOUND)
@@ -232,8 +232,7 @@ pub async fn order_detail(cx: &Cx) -> Result {
                             " "
                             (created_date)
                         </div>
-                        if order.status == ORDER_STATUS_CANCELLED
-                            || result == "cancel" {
+                        if order.status == ORDER_STATUS_CANCELLED || result == "cancel" {
                             <a
                                 href=(retry_slug
                                     .as_ref()
@@ -251,5 +250,5 @@ pub async fn order_detail(cx: &Cx) -> Result {
                 </div>
             }
         </div>
-    }
+    })
 }

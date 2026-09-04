@@ -5,13 +5,13 @@ use chrono::Datelike;
 use crate::i18n::loader;
 use topcoat::{
     Result,
-    view::{component, view},
+    view::{View, component, view},
 };
 
 #[component]
-pub async fn Footer(locale: String) -> Result {
+pub async fn Footer(locale: String) -> Result<impl View> {
     let year = chrono::Utc::now().year();
-    view! {
+    Ok(view! {
         <footer class="border-t border-border py-4 mt-auto">
             <div class="max-w-7xl mx-auto px-4 text-center">
                 <p class="text-xs text-muted-foreground">
@@ -20,5 +20,5 @@ pub async fn Footer(locale: String) -> Result {
                 </p>
             </div>
         </footer>
-    }
+    })
 }

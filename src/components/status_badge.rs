@@ -2,7 +2,7 @@
 
 use topcoat::{
     Result,
-    view::{Attributes, StaticClass, View, class, component, view},
+    view::{Attributes, Child, StaticClass, View, class, component, view},
 };
 
 /// 警示色徽章（项目自有组件）
@@ -20,7 +20,9 @@ const WARNING: StaticClass = class!(
 #[component]
 pub async fn warning_badge(
     #[default] mut attrs: Attributes,
-    #[default] child: View,
-) -> Result {
-    view! { <span class=(class!(WARNING, attrs.remove("class"))) (attrs)>(child)</span> }
+    #[default] child: Child<'_>,
+) -> Result<impl View> {
+    Ok(view! {
+        <span class=(class!(WARNING, attrs.remove("class"))) (attrs)>(child)</span>
+    })
 }

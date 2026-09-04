@@ -9,7 +9,7 @@ use crate::components::status_badge::warning_badge;
 use crate::i18n::loader;
 use topcoat::{
     Result,
-    view::{attributes, component, view},
+    view::{View, attributes, component, view},
 };
 
 /// 订单状态文案键
@@ -28,9 +28,9 @@ pub fn status_text_key(status: &str) -> &'static str {
 ///
 /// 待支付用警示色（项目自有 warning_badge），其余状态用 registry badge 变体。
 #[component]
-pub async fn OrderStatusBadge(locale: String, status: String) -> Result {
+pub async fn OrderStatusBadge(locale: String, status: String) -> Result<impl View> {
     let text = loader::t(&locale, status_text_key(&status));
-    view! {
+    Ok(view! {
         if status == ORDER_STATUS_PAID {
             badge(variant: BadgeVariant::Primary, attrs: attributes! {}, (text))
         } else if status == ORDER_STATUS_CANCELLED {
@@ -40,5 +40,5 @@ pub async fn OrderStatusBadge(locale: String, status: String) -> Result {
         } else {
             warning_badge(attrs: attributes! {}, (text))
         }
-    }
+    })
 }

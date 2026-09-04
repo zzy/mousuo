@@ -20,10 +20,10 @@ use topcoat::{
     context::Cx,
     cookie::RouterBuilderCookieExt,
     font::{Font, fontsource::fontsource_font},
-    router::{Router, RouterBuilderDiscoverExt, layout, module_router, tower::TowerLayer, BodyLimit},
+    router::{Router, RouterBuilderDiscoverExt, Slot, layout, module_router, tower::TowerLayer, BodyLimit},
     session::RouterBuilderSessionExt,
     tailwind,
-    view::view,
+    view::{View, view},
 };
 
 /// 主题字体
@@ -60,7 +60,7 @@ pub fn router() -> Router {
 }
 
 #[layout("/")]
-async fn root_layout(cx: &Cx, slot: Result) -> Result {
+async fn root_layout(cx: &Cx, slot: Slot<'_>) -> Result<impl View> {
     let locale = loader::locale_from_path(cx);
     let (signed_in, username) = match auth::current_user(cx).await {
         Some(u) => (true, Some(u)),
@@ -95,7 +95,7 @@ async fn root_layout(cx: &Cx, slot: Result) -> Result {
     {
         loader::remember(cx, first);
     }
-    view! {
+    Ok(view! {
         <!DOCTYPE html>
         <html lang=(locale.as_str())>
             <head>
@@ -128,10 +128,10 @@ async fn root_layout(cx: &Cx, slot: Result) -> Result {
                         csrf: csrf,
                         path_and_query: path_and_query
                     )
-                    <main class="flex-1">(slot?)</main>
+                    <main class="flex-1">(slot)</main>
                     components::footer::Footer(locale: locale.to_string())
                 </div>
             </body>
         </html>
-    }
+    })
 }

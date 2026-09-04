@@ -7,7 +7,7 @@ use crate::i18n::loader;
 use topcoat::{
     Result,
     icon::icon,
-    view::{attributes, component, view},
+    view::{View, attributes, component, view},
 };
 
 #[component]
@@ -18,10 +18,10 @@ pub async fn Nav(
     is_admin: bool,
     csrf: String,
     path_and_query: String,
-) -> Result {
+) -> Result<impl View> {
     let user_display = username.unwrap_or_default();
     let lang_label = loader::t(&locale, "lang");
-    view! {
+    Ok(view! {
         <nav class="bg-surface border-b border-border sticky top-0" style="z-index:52">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="flex items-center justify-between h-12">
@@ -141,5 +141,5 @@ pub async fn Nav(
         <script>
             "document.addEventListener('click',function(e){var m=document.getElementById('lang-menu');if(m&&!m.classList.contains('hidden')&&!e.target.closest('#lang-menu')&&!e.target.closest('button[onclick*=\"lang-menu\"]'))m.classList.add('hidden')});"
         </script>
-    }
+    })
 }

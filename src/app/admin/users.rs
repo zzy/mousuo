@@ -16,7 +16,7 @@ use topcoat::{
     Result,
     context::Cx,
     router::{content::Form, error::forbidden, page, path_param_segment, query_params, response::Response},
-    view::{attributes, component, view},
+    view::{View, attributes, component, view},
 };
 
 #[query_params]
@@ -26,7 +26,7 @@ pub struct AdminUsersQuery {
 
 /// 用户列表（AdminGuard 层保证管理员；不展示凭据）
 #[page("/{locale}/admin/users")]
-pub async fn admin_users_list(cx: &Cx) -> Result {
+pub async fn admin_users_list(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let loc = locale.to_string();
     let params = query_params::<AdminUsersQuery>(cx).ok();
@@ -51,7 +51,7 @@ pub async fn admin_users_list(cx: &Cx) -> Result {
         Some("role") => Some(loader::t(locale, "admin_role_updated").to_string()),
         _ => None,
     };
-    view! {
+    Ok(view! {
         <div class="max-w-6xl mx-auto px-4 py-8">
             components::admin_nav::AdminNav(
                 locale: loc.clone(),
@@ -72,7 +72,9 @@ pub async fn admin_users_list(cx: &Cx) -> Result {
                     for (user, (lc, (tok, cur))) in user_list
                         .into_iter()
                         .zip(
-                            locales.into_iter().zip(csrfs.into_iter().zip(current_names)),
+                            locales
+                                .into_iter()
+                                .zip(csrfs.into_iter().zip(current_names)),
                         ) {
                         AdminUserRow(
                             locale: lc,
@@ -89,12 +91,12 @@ pub async fn admin_users_list(cx: &Cx) -> Result {
                 )
             }
         </div>
-    }
+    })
 }
 
 /// 单行用户：用户名、邮箱、状态、管理员标记、封禁/解封、管理员任免
 #[component]
-async fn AdminUserRow(locale: String, user: User, csrf: String, current_username: String) -> Result {
+async fn AdminUserRow(locale: String, user: User, csrf: String, current_username: String) -> Result<impl View> {
     let status_key = match user.status {
         USER_STATUS_BANNED => "user_status_banned",
         USER_STATUS_ACTIVE => "user_status_active",
@@ -122,7 +124,7 @@ async fn AdminUserRow(locale: String, user: User, csrf: String, current_username
     // view! 分支按 move 捕获：封禁/任免两个互斥分支各自使用独立克隆
     let ban_csrf = csrf.clone();
     let role_csrf = csrf;
-    view! {
+    Ok(view! {
         <div
             class="bg-surface border border-border rounded-lg p-4 flex flex-wrap items-center gap-3"
         >
@@ -187,7 +189,7 @@ async fn AdminUserRow(locale: String, user: User, csrf: String, current_username
                                     "border-transparent bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90 active:bg-destructive/80"
                                 } else {
                                     "border-border text-foreground shadow-xs hover:bg-foreground/5 active:bg-foreground/10"
-                                }
+                                },
                             ))
                         >
                             (ban_label)
@@ -207,7 +209,7 @@ async fn AdminUserRow(locale: String, user: User, csrf: String, current_username
                 }
             </div>
         </div>
-    }
+    })
 }
 
 #[derive(Deserialize)]

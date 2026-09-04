@@ -7,7 +7,7 @@ use topcoat::{
     Result,
     context::Cx,
     router::path_param_segment,
-    view::{component, view},
+    view::{View, component, view},
 };
 
 /// 首页最新商品数量（试水：一屏 8 张卡片，不重复列表页分页能力）
@@ -15,26 +15,26 @@ const HOME_LATEST_COUNT: u64 = 8;
 
 /// 根路径：不跳转，以检测语言直接渲染首页；后续操作均在语言路径下
 #[topcoat::router::page("/")]
-pub async fn home_root(cx: &Cx) -> Result {
+pub async fn home_root(cx: &Cx) -> Result<impl View> {
     let locale = loader::detect(cx);
-    view! { HomeContent(locale: locale) }
+    Ok(view! { HomeContent(locale: locale) })
 }
 
 /// 语言路径首页（路径段是唯一权威语言入口）
 #[topcoat::router::page("/{locale}")]
-pub async fn locale_home(cx: &Cx) -> Result {
+pub async fn locale_home(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale").to_string();
-    view! { HomeContent(locale: locale) }
+    Ok(view! { HomeContent(locale: locale) })
 }
 
 /// 首页内容：价值主张 + 最新上架商品（复用 ProductCard，无信号不引 shard）
 #[component]
-async fn HomeContent(locale: String) -> Result {
+async fn HomeContent(locale: String) -> Result<impl View> {
     let latest = products::list_products(None, 1, HOME_LATEST_COUNT)
         .await
         .unwrap_or_default();
     let locales: Vec<String> = std::iter::repeat_n(locale.clone(), latest.len()).collect();
-    view! {
+    Ok(view! {
         <section class="max-w-6xl mx-auto px-4 pt-12 pb-2 text-center">
             <h1 class="text-3xl font-bold text-foreground">
                 (loader::t(&locale, "site_slogan"))
@@ -68,5 +68,5 @@ async fn HomeContent(locale: String) -> Result {
                 </div>
             </section>
         }
-    }
+    })
 }

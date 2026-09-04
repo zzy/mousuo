@@ -23,7 +23,7 @@ use topcoat::{
         response::Response,
     },
     runtime::Event,
-    view::{attributes, component, view},
+    view::{View, attributes, component, view},
 };
 
 #[derive(Deserialize)]
@@ -50,7 +50,7 @@ pub struct SignInQuery {
 }
 
 #[topcoat::router::page("/{locale}/sign-in")]
-pub async fn sign_in_page(cx: &Cx) -> Result {
+pub async fn sign_in_page(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     // 先签发 session（否则验证码/CSRF 无处存放）
     let _ = topcoat::session::start(cx).await;
@@ -72,7 +72,7 @@ pub async fn sign_in_page(cx: &Cx) -> Result {
         .and_then(|n| form::safe_next(&n));
     let resend_account = form::query_param(cx, "account")
         .filter(|_| form::query_param(cx, "error").as_deref() == Some("not_activation"));
-    view! {
+    Ok(view! {
         SignInCard(
             locale: locale.to_string(),
             error_message: error_message,
@@ -80,7 +80,7 @@ pub async fn sign_in_page(cx: &Cx) -> Result {
             resend_account: resend_account,
             csrf: csrf
         )
-    }
+    })
 }
 
 #[topcoat::router::route(POST "/{locale}/sign-in")]
@@ -138,9 +138,9 @@ async fn SignInCard(
     next: String,
     resend_account: Option<String>,
     csrf: String,
-) -> Result {
+) -> Result<impl View> {
     let cap_locale = locale.clone();
-    view! {
+    Ok(view! {
         signal captcha_nonce = 0.0;
         auth_dialog(
             locale: locale.clone(),
@@ -153,7 +153,10 @@ async fn SignInCard(
                     method="POST"
                     action=""
                     class="space-y-4"
-                    onsubmit=(format!("var b=this.querySelector('button[type=submit]');if(b){{b.disabled=true;b.textContent='{}'}}", loader::t(&locale, "signing_in")))
+                    onsubmit=(format!(
+                        "var b=this.querySelector('button[type=submit]');if(b){{b.disabled=true;b.textContent='{}'}}",
+                        loader::t(&locale, "signing_in"),
+                    ))
                 >
                     <input type="hidden" name="next" value=(next)>
                     CsrfField(token: csrf)
@@ -223,7 +226,10 @@ async fn SignInCard(
                     if let Some(ref acc) = resend_account {
                         <p class="text-sm text-center">
                             <a
-                                href=(format!("/{locale}/users/resend?account={}", acc.clone()))
+                                href=(format!(
+                                    "/{locale}/users/resend?account={}",
+                                    acc.clone(),
+                                ))
                                 class="text-blue-600 dark:text-blue-400 hover:underline no-underline"
                             >
                                 (loader::t(&locale, "resend_link"))
@@ -243,5 +249,5 @@ async fn SignInCard(
                 </p>
             </div>
         )
-    }
+    })
 }

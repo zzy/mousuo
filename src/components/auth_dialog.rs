@@ -5,7 +5,7 @@ use crate::components::dialog::{dialog, dialog_content};
 use topcoat::{
     Result,
     icon::icon,
-    view::{View, attributes, component, view},
+    view::{Child, View, attributes, component, view},
 };
 
 /// 鉴权弹层宽度档位：注册恰为签入的 2 倍
@@ -32,9 +32,9 @@ impl AuthDialogWidth {
 pub async fn auth_dialog(
     locale: String,
     width: AuthDialogWidth,
-    #[default] child: View,
-) -> Result {
-    view! {
+    #[default] child: Child<'_>,
+) -> Result<impl View> {
+    Ok(view! {
         dialog(
             open: true,
             dialog_content(
@@ -48,5 +48,5 @@ pub async fn auth_dialog(
                 (child)
             )
         )
-    }
+    })
 }

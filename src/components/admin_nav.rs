@@ -3,19 +3,19 @@
 use crate::i18n::loader;
 use topcoat::{
     Result,
-    view::{component, view},
+    view::{View, component, view},
 };
 
 /// 管理端子导航（订单/用户/商品/上传）
 #[component]
-pub async fn AdminNav(locale: String, active: String) -> Result {
+pub async fn AdminNav(locale: String, active: String) -> Result<impl View> {
     let items = [
         ("orders", "admin_orders"),
         ("users", "admin_users"),
         ("products", "admin_products"),
         ("upload", "admin_upload"),
     ];
-    view! {
+    Ok(view! {
         <div class="flex flex-wrap gap-2 mb-6 border-b border-border pb-2">
             for (key, label) in items {
                 <a
@@ -30,5 +30,5 @@ pub async fn AdminNav(locale: String, active: String) -> Result {
                 </a>
             }
         </div>
-    }
+    })
 }

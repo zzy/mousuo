@@ -18,7 +18,7 @@ use topcoat::{
     context::Cx,
     router::{page, path_param_segment, query_params},
     runtime::{Event, shard},
-    view::{attributes, view},
+    view::{View, attributes, view},
 };
 
 #[query_params]
@@ -29,7 +29,7 @@ pub struct ProductQuery {
 
 /// 商品列表页：signal 搜索 + shard 网格 + 分页
 #[page("/{locale}/products")]
-pub async fn products_list(cx: &Cx) -> Result {
+pub async fn products_list(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let params = query_params::<ProductQuery>(cx).ok();
     let initial_q = params
@@ -38,7 +38,7 @@ pub async fn products_list(cx: &Cx) -> Result {
         .unwrap_or("")
         .to_string();
     let list_error = form::error_message(cx, &locale, &["invalid"]);
-    view! {
+    Ok(view! {
         signal query = initial_q;
         signal locale_sig = locale.to_string();
 
@@ -73,13 +73,13 @@ pub async fn products_list(cx: &Cx) -> Result {
 
             product_grid(locale: $(locale_sig.get()), query: $(query.get()))
         </div>
-    }
+    })
 }
 
 /// 商品网格：shard 在客户端按信号重渲染时运行于自身请求上下文，
 /// 页面路径参数不可用，故 locale 以参数显式传入
 #[shard]
-async fn product_grid(cx: &Cx, locale: String, query: String) -> Result {
+async fn product_grid(cx: &Cx, locale: String, query: String) -> Result<impl View> {
     let loc = locale.clone();
     let params = query_params::<ProductQuery>(cx).ok();
     let page = params.as_ref().and_then(|p| p.page).unwrap_or(1).max(1);
@@ -100,7 +100,7 @@ async fn product_grid(cx: &Cx, locale: String, query: String) -> Result {
         Some(q) => format!("/{locale}/products?q={q}"),
         None => format!("/{locale}/products"),
     };
-    view! {
+    Ok(view! {
         if product_list.is_empty() {
             <div class="text-center py-16">
                 <p class="text-base text-muted-foreground">
@@ -119,12 +119,12 @@ async fn product_grid(cx: &Cx, locale: String, query: String) -> Result {
                 base_url: base_url
             )
         }
-    }
+    })
 }
 
 /// 商品详情页：左图右购买面板（桌面）/ 单列（移动）
 #[page("/{locale}/products/{slug}")]
-pub async fn product_detail(cx: &Cx) -> Result {
+pub async fn product_detail(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let slug = path_param_segment(cx, "slug");
     let product = products::get_product_by_slug(&slug).await.ok().flatten();
@@ -143,7 +143,7 @@ pub async fn product_detail(cx: &Cx) -> Result {
         .uri
         .path()
         .to_string();
-    view! {
+    Ok(view! {
         <div class="max-w-6xl mx-auto px-4 py-8">
             if let Some(ref p) = product {
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -199,10 +199,7 @@ pub async fn product_detail(cx: &Cx) -> Result {
                             </form>
                         } else {
                             <a
-                                href=(format!(
-                                    "/{locale}/sign-in?next={}",
-                                    current_path
-                                ))
+                                href=(format!("/{locale}/sign-in?next={}", current_path))
                                 class=(button_variants(
                                     ButtonVariant::Primary,
                                     crate::components::button::ButtonSize::Md,
@@ -247,5 +244,5 @@ pub async fn product_detail(cx: &Cx) -> Result {
                 </div>
             }
         </div>
-    }
+    })
 }

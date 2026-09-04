@@ -16,12 +16,12 @@ use topcoat::{
         path_param_segment,
         response::Response,
     },
-    view::{attributes, view},
+    view::{View, attributes, view},
 };
 
 /// 上传页：表单 + 结果展示（?ok=image|video&url=/media/…）
 #[page("/{locale}/admin/upload")]
-pub async fn admin_upload_page(cx: &Cx) -> Result {
+pub async fn admin_upload_page(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let csrf = session::ensure_csrf_token(cx).await.unwrap_or_default();
     let url = form::query_param(cx, "url");
@@ -32,7 +32,7 @@ pub async fn admin_upload_page(cx: &Cx) -> Result {
         &locale,
         &["upload_empty", "upload_too_large", "upload_type", "upload_failed"],
     );
-    view! {
+    Ok(view! {
         <div class="max-w-2xl mx-auto px-4 py-8">
             components::admin_nav::AdminNav(
                 locale: locale.to_string(),
@@ -97,7 +97,7 @@ pub async fn admin_upload_page(cx: &Cx) -> Result {
                 </div>
             }
         </div>
-    }
+    })
 }
 
 /// 上传处理：图片直存；视频 ffprobe 校验 + HLS 转码；303 回结果页（PRG）

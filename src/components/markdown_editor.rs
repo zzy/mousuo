@@ -5,7 +5,7 @@ use crate::components::card::card;
 use crate::i18n::loader;
 use topcoat::{
     Result,
-    view::{component, view, attributes},
+    view::{View, component, view, attributes},
 };
 
 /// Markdown 编辑器组件 — 带预览切换的 textarea
@@ -18,11 +18,11 @@ pub async fn MarkdownEditor(
     value: String,
     required: bool,
     csrf: String,
-) -> Result {
+) -> Result<impl View> {
     let editor_id = format!("md-ed-{name}");
     let preview_id = format!("md-pv-{name}");
     let req = if required { "required" } else { "" };
-    view! {
+    Ok(view! {
         <div class="md-editor">
             <div class="flex items-center gap-2 mb-2">
                 button(
@@ -32,7 +32,9 @@ pub async fn MarkdownEditor(
                         type="button"
                         class="border-0 cursor-pointer"
                         id=(format!("md-btn-pv-{name}"))
-                        onclick=(format!("mdPreview('{editor_id}','{preview_id}','{locale}')"))
+                        onclick=(format!(
+                            "mdPreview('{editor_id}','{preview_id}','{locale}')",
+                        ))
                     },
                     (loader::t(&locale, "md_preview"))
                 )
@@ -64,8 +66,8 @@ pub async fn MarkdownEditor(
         </div>
         <script>
             (format!(
-                "async function mdPreview(ed,pv,loc){{var t=document.getElementById(ed);var p=document.getElementById(pv);var r=await fetch('/'+loc+'/md-preview',{{method:'POST',headers:{{'Content-Type':'application/x-www-form-urlencoded'}},body:'md='+encodeURIComponent(t.value)+'&csrf_token='+encodeURIComponent('{csrf}')}});var h=await r.text();p.innerHTML=h;t.classList.add('hidden');p.classList.remove('hidden');document.getElementById('md-btn-pv-{name}').classList.add('hidden');document.getElementById('md-btn-src-{name}').classList.remove('hidden')}}function mdSource(ed,pv){{document.getElementById(ed).classList.remove('hidden');document.getElementById(pv).classList.add('hidden');document.getElementById('md-btn-pv-{name}').classList.remove('hidden');document.getElementById('md-btn-src-{name}').classList.add('hidden')}}"
+                "async function mdPreview(ed,pv,loc){{var t=document.getElementById(ed);var p=document.getElementById(pv);var r=await fetch('/'+loc+'/md-preview',{{method:'POST',headers:{{'Content-Type':'application/x-www-form-urlencoded'}},body:'md='+encodeURIComponent(t.value)+'&csrf_token='+encodeURIComponent('{csrf}')}});var h=await r.text();p.innerHTML=h;t.classList.add('hidden');p.classList.remove('hidden');document.getElementById('md-btn-pv-{name}').classList.add('hidden');document.getElementById('md-btn-src-{name}').classList.remove('hidden')}}function mdSource(ed,pv){{document.getElementById(ed).classList.remove('hidden');document.getElementById(pv).classList.add('hidden');document.getElementById('md-btn-pv-{name}').classList.remove('hidden');document.getElementById('md-btn-src-{name}').classList.add('hidden')}}",
             ))
         </script>
-    }
+    })
 }

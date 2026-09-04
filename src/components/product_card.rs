@@ -8,7 +8,7 @@ use crate::i18n::loader;
 use crate::models::product::Product;
 use topcoat::{
     Result,
-    view::{attributes, component, view},
+    view::{View, attributes, component, view},
 };
 
 /// 低库存文案（替换 {stock} 占位符）
@@ -18,8 +18,8 @@ fn low_stock_text(locale: &str, stock: i64) -> String {
 
 /// 库存角标：库存充足正常色 / 售罄红色 / 低库存黄色
 #[component]
-pub async fn StockBadge(locale: String, stock: i64) -> Result {
-    view! {
+pub async fn StockBadge(locale: String, stock: i64) -> Result<impl View> {
+    Ok(view! {
         if stock == 0 {
             badge(
                 variant: BadgeVariant::Destructive,
@@ -35,16 +35,16 @@ pub async fn StockBadge(locale: String, stock: i64) -> Result {
                 (loader::t(&locale, "product_in_stock"))
             )
         }
-    }
+    })
 }
 
 /// 商品卡片：4:3 图 + 名称 + 价格 + 库存角标
 ///
 /// 铁律：商品图容器永远浅色底（bg-white 包裹图片，深色模式下不刺眼）
 #[component]
-pub async fn ProductCard(locale: String, product: Product) -> Result {
+pub async fn ProductCard(locale: String, product: Product) -> Result<impl View> {
     let price = format_cents(product.price_cents);
-    view! {
+    Ok(view! {
         <a
             href=(format!("/{locale}/products/{}", product.slug))
             class="bg-surface border border-border rounded-lg shadow-xs overflow-hidden no-underline hover:shadow-md transition-shadow block"
@@ -68,5 +68,5 @@ pub async fn ProductCard(locale: String, product: Product) -> Result {
                 <div class="text-base font-semibold text-foreground mt-1">(price)</div>
             </div>
         </a>
-    }
+    })
 }

@@ -14,12 +14,12 @@ use topcoat::{
     Result,
     context::Cx,
     router::{content::Form, error::forbidden, page, path_param_segment, response::Response},
-    view::{attributes, view},
+    view::{View, attributes, view},
 };
 
 /// 找回密码页：账户 + 验证码；无论账户是否存在都提示「若存在则已发送」（防枚举）
 #[page("/{locale}/users/forgot-password")]
-pub async fn forgot_password_page(cx: &Cx) -> Result {
+pub async fn forgot_password_page(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let captcha = captcha::generate();
     let _ = topcoat::session::start(cx).await;
@@ -29,7 +29,7 @@ pub async fn forgot_password_page(cx: &Cx) -> Result {
     let captcha_src = format!("data:image/svg+xml;base64,{captcha_svg}");
     let sent = form::query_param(cx, "sent").is_some();
     let error = form::query_param(cx, "error").is_some();
-    view! {
+    Ok(view! {
         <main class="max-w-md mx-auto px-4 py-8">
             card(
                 attrs: attributes! { class="p-6" },
@@ -89,7 +89,7 @@ pub async fn forgot_password_page(cx: &Cx) -> Result {
                 </form>
             )
         </main>
-    }
+    })
 }
 
 #[derive(Deserialize)]
@@ -128,13 +128,13 @@ pub async fn forgot_password_action(cx: &Cx, Form(form): Form<ForgotForm>) -> Re
 
 /// 重置密码页：token 表单（新密码 ×2）
 #[page("/{locale}/users/reset-password")]
-pub async fn reset_password_page(cx: &Cx) -> Result {
+pub async fn reset_password_page(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let csrf = session::ensure_csrf_token(cx).await.unwrap_or_default();
     let token = form::query_param(cx, "token").unwrap_or_default();
     let error = form::error_message(cx, &locale, &["password_weak", "password_mismatch", "token_invalid"]);
     let invalid = form::query_param(cx, "invalid").is_some();
-    view! {
+    Ok(view! {
         <main class="max-w-md mx-auto px-4 py-8">
             card(
                 attrs: attributes! { class="p-6" },
@@ -169,10 +169,7 @@ pub async fn reset_password_page(cx: &Cx) -> Result {
                     <div class="space-y-1">
                         label(
                             attrs: attributes! {},
-                            (loader::t(
-                                &locale,
-                                "register_confirm_password",
-                            ))
+                            (loader::t(&locale, "register_confirm_password"))
                         )
                         input(
                             attrs: attributes! {
@@ -191,7 +188,7 @@ pub async fn reset_password_page(cx: &Cx) -> Result {
                 </form>
             )
         </main>
-    }
+    })
 }
 
 #[derive(Deserialize)]

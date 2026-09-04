@@ -12,18 +12,18 @@ use topcoat::{
     Result,
     context::Cx,
     router::{page, path_param_segment},
-    view::{attributes, view},
+    view::{View, attributes, view},
 };
 
 /// 用户资料页（公开只读）：用户名、状态徽章、简介（Markdown）；邮箱仅本人可见
 #[page("/{locale}/users/{username}")]
-pub async fn user_profile(cx: &Cx) -> Result {
+pub async fn user_profile(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let username = path_param_segment(cx, "username");
     let user = users::get_user_profile(username).await.ok().flatten();
     // 邮箱属于隐私：仅当访问者就是本人时展示
     let is_self = auth::current_user(cx).await.as_deref() == Some(username);
-    view! {
+    Ok(view! {
         <main class="max-w-2xl mx-auto px-4 py-8">
             if let Some(ref u) = user {
                 let status_key = match u.status {
@@ -93,5 +93,5 @@ pub async fn user_profile(cx: &Cx) -> Result {
                 </div>
             }
         </main>
-    }
+    })
 }
