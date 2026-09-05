@@ -174,7 +174,10 @@ async fn AdminUserRow(locale: String, user: User, csrf: String, current_username
                                 type="submit"
                                 name="role"
                                 value="user"
-                                class=(button_variants(ButtonVariant::Secondary, ButtonSize::Sm))
+                                class=(button_variants(
+                                    ButtonVariant::Secondary,
+                                    ButtonSize::Sm,
+                                ))
                             >
                                 (loader::t(&locale, "admin_user_demote"))
                             </button>
@@ -199,7 +202,10 @@ async fn AdminUserRow(locale: String, user: User, csrf: String, current_username
                             type="submit"
                             name="role"
                             value="admin"
-                            class=(button_variants(ButtonVariant::Secondary, ButtonSize::Sm))
+                            class=(button_variants(
+                                ButtonVariant::Secondary,
+                                ButtonSize::Sm,
+                            ))
                         >
                             (loader::t(&locale, "admin_user_promote"))
                         </button>

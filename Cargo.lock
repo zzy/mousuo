@@ -5437,7 +5437,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "futures-util",
  "inventory",
@@ -5468,7 +5468,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-asset"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "http 1.5.0",
  "memchr",
@@ -5484,7 +5484,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-cookie"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "cookie",
  "getrandom 0.2.17",
@@ -5497,7 +5497,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-core"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "anymap3",
@@ -5511,7 +5511,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-core-grammar"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -5521,7 +5521,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-core-macro"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "quote",
  "syn 2.0.119",
@@ -5530,7 +5530,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-font"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "heck 0.5.0",
  "inventory",
@@ -5545,7 +5545,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-font-grammar"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5556,7 +5556,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-font-macro"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "quote",
  "syn 2.0.119",
@@ -5565,7 +5565,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-icon"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -5578,7 +5578,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-icon-grammar"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -5591,7 +5591,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-icon-macro"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5601,7 +5601,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-mail"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "lettre",
  "thiserror 2.0.20",
@@ -5613,7 +5613,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-mail-grammar"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5625,7 +5625,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-mail-macro"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "quote",
  "syn 2.0.119",
@@ -5634,7 +5634,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-router"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "bytes",
  "form_urlencoded",
@@ -5665,7 +5665,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-router-grammar"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -5676,7 +5676,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-router-macro"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "quote",
  "syn 2.0.119",
@@ -5685,7 +5685,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-runtime"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "inventory",
  "ref-cast",
@@ -5700,7 +5700,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-runtime-grammar"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5714,7 +5714,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-runtime-macro"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "quote",
  "syn 2.0.119",
@@ -5723,7 +5723,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-session"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "base64 0.22.1",
  "getrandom 0.4.3",
@@ -5738,7 +5738,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-tailwind"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "sha2 0.11.0",
  "thiserror 2.0.20",
@@ -5748,11 +5748,11 @@ dependencies = [
 
 [[package]]
 name = "topcoat-ui-registry"
-version = "0.6.2"
+version = "0.7.0"
 
 [[package]]
 name = "topcoat-view"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "futures-core",
  "futures-util",
@@ -5765,7 +5765,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-view-grammar"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -5777,7 +5777,7 @@ dependencies = [
 
 [[package]]
 name = "topcoat-view-macro"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "quote",
  "syn 2.0.119",
