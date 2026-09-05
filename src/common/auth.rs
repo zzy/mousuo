@@ -65,7 +65,7 @@ pub async fn current_user(cx: &Cx) -> Option<String> {
     session_db::resolve(&hash).await.ok().flatten()
 }
 
-/// 当前请求是否为管理员（P3：is_admin 标记，试水不做 RBAC）
+/// 当前请求是否为管理员（is_admin 标记）
 pub async fn is_admin(cx: &Cx) -> bool {
     match current_user(cx).await {
         Some(username) => crate::db::users::find_user(&username)

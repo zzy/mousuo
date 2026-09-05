@@ -1,4 +1,4 @@
-//! 媒体处理 — ffmpeg 校验与 HLS 转码（从 raolv 底座携带）
+//! 媒体处理 — ffmpeg 校验与 HLS 转码
 
 use std::path::Path;
 use std::process::Command;

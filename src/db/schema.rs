@@ -3,7 +3,7 @@ use crate::db;
 /// 启动时同步表结构（幂等，遵循 SurrealDB 规范显式定义）
 pub async fn ensure_tables() -> Result<(), String> {
     let db = db::get_db();
-    // user 用户表（is_admin：P3 管理员标记，默认 0）
+    // user 用户表
     db.query(
         "DEFINE TABLE IF NOT EXISTS user SCHEMAFULL;
          DEFINE FIELD IF NOT EXISTS username ON user TYPE string;

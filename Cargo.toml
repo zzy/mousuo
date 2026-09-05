@@ -18,7 +18,7 @@ topcoat = { path = "../tmp/topcoat/crates/topcoat", features = [
 ] }
 futures-util = "0.3"
 surrealdb = "3"
-tokio     = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio     = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }
 tower-http = { version = "0.7", features = ["trace"] }
 icu       = { version = "2", features = ["compiled_data", "sync"] }
 serde     = { version = "1", features = ["derive"] }
@@ -32,7 +32,6 @@ uuid           = { version = "1", features = ["v4"] }
 dotenvy        = "0.15"
 chrono         = "0.4"
 pulldown-cmark = "0.13"
-anyhow         = "1"
 async-stripe   = { version = "0.41", features = ["runtime-tokio-hyper"] }
 
 [build-dependencies]

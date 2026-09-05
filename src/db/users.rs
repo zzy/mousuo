@@ -1,6 +1,7 @@
 use crate::common::auth;
 use crate::common::constant::{USER_STATUS_ACTIVE, USER_STATUS_PENDING};
 use crate::db;
+
 use crate::models::user::User;
 use surrealdb::types::SurrealValue;
 
@@ -14,13 +15,13 @@ pub async fn register_user(
     let cred = auth::hash_credential(password);
     let token = crate::common::rand::random_hex();
     let mut res = db::get_db()
-        .query("CREATE user CONTENT { username: $user, cred: $cred, email: $email, introduction: $intro, status: $status, activation_token: $tok } RETURN id, username, cred, email, introduction, status")
-        .bind(("user", username.to_string()))
+        .query("CREATE user CONTENT { username: $username, cred: $cred, email: $email, introduction: $introduction, status: $status, activation_token: $token } RETURN id, username, cred, email, introduction, status")
+        .bind(("username", username.to_string()))
         .bind(("cred", cred))
         .bind(("email", email.to_string()))
-        .bind(("intro", introduction.to_string()))
+        .bind(("introduction", introduction.to_string()))
         .bind(("status", USER_STATUS_PENDING))
-        .bind(("tok", token.clone()))
+        .bind(("token", token.clone()))
         .await
         .map_err(|e| e.to_string())?;
     let raw: Vec<surrealdb::types::Value> = res.take(0).map_err(|e| e.to_string())?;
@@ -40,10 +41,10 @@ pub async fn activate_by_token(token: &str) -> Result<(), String> {
     let db = db::get_db();
     let mut res = db
         .query(
-            "UPDATE user SET status = $status, activation_token = NONE WHERE activation_token = $tok",
+            "UPDATE user SET status = $status, activation_token = NONE WHERE activation_token = $token",
         )
         .bind(("status", USER_STATUS_ACTIVE as i64))
-        .bind(("tok", token.to_string()))
+        .bind(("token", token.to_string()))
         .await
         .map_err(|e| e.to_string())?;
     // 单记录 UPDATE 返回是对象而非数组，用 Vec<Value> 读取（见 db_id_binding 回归）
@@ -56,8 +57,8 @@ pub async fn activate_by_token(token: &str) -> Result<(), String> {
 
 pub async fn find_user(username: &str) -> Result<Option<User>, String> {
     db::query_one(
-        "SELECT id, username, cred, email, introduction, status, is_admin FROM user WHERE username = $user",
-        &[("user", username.to_string().into_value())],
+        "SELECT id.id() AS id, username, cred, email, introduction, status, is_admin FROM user WHERE username = $username",
+        &[("username", username.to_string().into_value())],
     )
     .await
 }
@@ -66,8 +67,8 @@ pub async fn find_user(username: &str) -> Result<Option<User>, String> {
 pub async fn find_by_account(account: &str) -> Result<Option<User>, String> {
     if account.contains('@') {
         db::query_one(
-            "SELECT id, username, cred, email, introduction, status, is_admin FROM user WHERE email = $sig",
-            &[("sig", account.to_string().into_value())],
+            "SELECT id.id() AS id, username, cred, email, introduction, status, is_admin FROM user WHERE email = $account",
+            &[("account", account.to_string().into_value())],
         )
         .await
     } else {
@@ -78,8 +79,8 @@ pub async fn find_by_account(account: &str) -> Result<Option<User>, String> {
 /// 按用户 id 查找（管理端封禁用）
 pub async fn find_user_by_id(user_id: &str) -> Result<Option<User>, String> {
     db::query_one(
-        "SELECT id, username, cred, email, introduction, status, is_admin FROM user WHERE id = $id",
-        &[("id", db::record_id(user_id)?)],
+        "SELECT id.id() AS id, username, cred, email, introduction, status, is_admin FROM user WHERE id = type::record('user', $id)",
+        &[("id", user_id.to_string().into_value())],
     )
     .await
 }
@@ -87,8 +88,8 @@ pub async fn find_user_by_id(user_id: &str) -> Result<Option<User>, String> {
 /// 按用户名查找用户公开信息（资料页）
 pub async fn get_user_profile(username: &str) -> Result<Option<User>, String> {
     db::query_one(
-        "SELECT id, username, cred, email, introduction, status FROM user WHERE username = $user",
-        &[("user", username.to_string().into_value())],
+        "SELECT id.id() AS id, username, cred, email, introduction, status FROM user WHERE username = $username",
+        &[("username", username.to_string().into_value())],
     )
     .await
 }
@@ -96,8 +97,8 @@ pub async fn get_user_profile(username: &str) -> Result<Option<User>, String> {
 /// 设置用户状态（管理端封禁/解封）
 pub async fn set_user_status(user_id: &str, status: u8) -> Result<(), String> {
     let db = db::get_db();
-    db.query("UPDATE $id SET status = $status")
-        .bind(("id", db::record_id(user_id)?))
+    db.query("UPDATE type::record('user', $id) SET status = $status")
+        .bind(("id", user_id.to_string()))
         .bind(("status", status as i64))
         .await
         .map_err(|e| e.to_string())?;
@@ -112,9 +113,9 @@ pub async fn rotate_activation_token(account: &str) -> Result<(String, String), 
     }
     let token = crate::common::rand::random_hex();
     db::get_db()
-        .query("UPDATE $id SET activation_token = $tok")
-        .bind(("id", db::record_id(&user.id)?))
-        .bind(("tok", token.clone()))
+        .query("UPDATE type::record('user', $id) SET activation_token = $token")
+        .bind(("id", user.id.clone()))
+        .bind(("token", token.clone()))
         .await
         .map_err(|e| e.to_string())?;
     Ok((user.email, token))
@@ -123,9 +124,9 @@ pub async fn rotate_activation_token(account: &str) -> Result<(String, String), 
 /// 更新密码哈希（修改/重置密码共用）
 pub async fn update_cred(username: &str, cred: &str) -> Result<(), String> {
     db::get_db()
-        .query("UPDATE user SET cred = $cred WHERE username = $user")
+        .query("UPDATE user SET cred = $cred WHERE username = $username")
         .bind(("cred", cred.to_string()))
-        .bind(("user", username.to_string()))
+        .bind(("username", username.to_string()))
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
@@ -141,10 +142,10 @@ pub async fn issue_password_reset(account: &str) -> Result<(String, String), Str
         .unwrap_or(0)
         + crate::common::constant::PASSWORD_RESET_EXPIRY as i64;
     db::get_db()
-        .query("UPDATE $id SET password_reset_token = $tok, password_reset_expires_at = $exp")
-        .bind(("id", db::record_id(&user.id)?))
-        .bind(("tok", token.clone()))
-        .bind(("exp", expires))
+        .query("UPDATE type::record('user', $id) SET password_reset_token = $token, password_reset_expires_at = $expires")
+        .bind(("id", user.id.clone()))
+        .bind(("token", token.clone()))
+        .bind(("expires", expires))
         .await
         .map_err(|e| e.to_string())?;
     Ok((user.email, token))
@@ -157,8 +158,8 @@ pub async fn complete_password_reset(token: &str, cred: &str) -> Result<String, 
     }
     let db = db::get_db();
     let mut res = db
-        .query("SELECT username, password_reset_expires_at FROM user WHERE password_reset_token = $tok")
-        .bind(("tok", token.to_string()))
+        .query("SELECT username, password_reset_expires_at FROM user WHERE password_reset_token = $token")
+        .bind(("token", token.to_string()))
         .await
         .map_err(|e| e.to_string())?;
     let rows: Vec<surrealdb::types::Value> = res.take(0).map_err(|e| e.to_string())?;
@@ -181,9 +182,9 @@ pub async fn complete_password_reset(token: &str, cred: &str) -> Result<String, 
             }
         })
         .ok_or("重置链接无效或已过期".to_string())?;
-    db.query("UPDATE user SET cred = $cred, password_reset_token = NONE, password_reset_expires_at = NONE WHERE username = $user")
+    db.query("UPDATE user SET cred = $cred, password_reset_token = NONE, password_reset_expires_at = NONE WHERE username = $username")
         .bind(("cred", cred.to_string()))
-        .bind(("user", username.clone()))
+        .bind(("username", username.clone()))
         .await
         .map_err(|e| e.to_string())?;
     Ok(username)
@@ -192,9 +193,9 @@ pub async fn complete_password_reset(token: &str, cred: &str) -> Result<String, 
 /// 设置管理员标记（管理端任免；不可取消自己由调用方保证）
 pub async fn set_user_is_admin(user_id: &str, is_admin: u8) -> Result<(), String> {
     db::get_db()
-        .query("UPDATE $id SET is_admin = $flag")
-        .bind(("id", db::record_id(user_id)?))
-        .bind(("flag", is_admin as i64))
+        .query("UPDATE type::record('user', $id) SET is_admin = $is_admin")
+        .bind(("id", user_id.to_string()))
+        .bind(("is_admin", is_admin as i64))
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
@@ -204,7 +205,7 @@ pub async fn set_user_is_admin(user_id: &str, is_admin: u8) -> Result<(), String
 pub async fn list_users(page: u64, page_size: u64) -> Result<Vec<User>, String> {
     let start = ((page - 1) * page_size) as i64;
     db::query_as(
-        "SELECT id, username, cred, email, introduction, status, is_admin FROM user ORDER BY username ASC LIMIT $limit START $start",
+        "SELECT id.id() AS id, username, cred, email, introduction, status, is_admin FROM user ORDER BY username ASC LIMIT $limit START $start",
         &[
             ("limit", (page_size as i64).into_value()),
             ("start", start.into_value()),

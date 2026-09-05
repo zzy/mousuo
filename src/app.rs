@@ -4,12 +4,15 @@ mod checkout;
 mod forgot_password;
 mod home;
 mod media;
+mod notify;
 mod orders;
 mod products;
 mod register;
 mod sign_in;
 mod users;
 mod webhook;
+
+use tokio::sync::broadcast;
 
 use crate::common::{auth, config};
 use crate::components;
@@ -39,6 +42,7 @@ pub fn router() -> Router {
         .credentials(&cfg.email_username, &cfg.email_password)
         .build();
     let mail_config = topcoat::mail::MailConfig::builder().transport(smtp).build();
+    let (notify_tx, _) = broadcast::channel::<String>(32);
 
     module_router!()
         .discover()
@@ -46,6 +50,7 @@ pub fn router() -> Router {
         .sessions(crate::common::session::session_config())
         .assets(AssetBundle::load().unwrap())
         .app_context(mail_config)
+        .app_context(notify_tx)
         .layer(crate::common::locale_redirect::LocaleRedirect)
         .layer(crate::common::login_guard::LoginGuard)
         .layer(crate::common::admin_guard::AdminGuard)
@@ -131,6 +136,11 @@ async fn root_layout(cx: &Cx, slot: Slot<'_>) -> Result<impl View> {
                     <main class="flex-1">(slot)</main>
                     components::footer::Footer(locale: locale.to_string())
                 </div>
+                if signed_in {
+                    <script>
+                        "(function(){var es=new EventSource('/{locale}/notify');es.onmessage=function(e){var el=document.createElement('div');el.className='fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-surface border border-border rounded-lg px-4 py-2 text-sm text-foreground shadow-lg';el.textContent=e.data;document.body.appendChild(el);setTimeout(function(){el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(function(){el.remove()},300)},3000)}})();"
+                    </script>
+                }
             </body>
         </html>
     })

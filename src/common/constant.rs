@@ -29,5 +29,34 @@ pub const ORDER_STATUS_COMPLETED: &str = "completed";
 /// 订单状态：已取消（P3 管理端流转）
 pub const ORDER_STATUS_CANCELLED: &str = "cancelled";
 
-/// 管理员标记：是（user.is_admin 字段，试水不做 RBAC）
+/// 管理员标记：是（user.is_admin 字段）
 pub const USER_IS_ADMIN: u8 = 1;
+/// 错误码 → i18n 键（业务错误码映射，各项目自持）
+pub fn error_i18n_key(err: &str) -> Option<&'static str> {
+    Some(match err {
+        "captcha" => "captcha_invalid",
+        "incorrect" => "sign_in_incorrect",
+        "not_activation" => "sign_in_not_activation",
+        "banned" => "sign_in_banned",
+        "security" => "sign_in_security_problem",
+        "password_weak" => "register_password_weak",
+        "password_mismatch" => "register_password_mismatch",
+        "exist" => "register_exist",
+        "payment" => "checkout_failed",
+        "invalid" => "checkout_invalid",
+        "stock" => "product_out_of_stock",
+        "slug_invalid" => "admin_form_slug_invalid",
+        "slug_exists" => "admin_form_slug_exists",
+        "title_invalid" => "admin_form_title_invalid",
+        "description_invalid" => "admin_form_description_invalid",
+        "price_invalid" => "admin_form_price_invalid",
+        "stock_invalid" => "admin_form_stock_invalid",
+        "create_failed" => "admin_form_create_failed",
+        "update_failed" => "admin_form_update_failed",
+        "upload_empty" => "admin_upload_empty",
+        "upload_too_large" => "admin_upload_too_large",
+        "upload_type" => "admin_upload_type_invalid",
+        "upload_failed" => "admin_upload_failed",
+        _ => return None,
+    })
+}

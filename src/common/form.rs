@@ -25,32 +25,7 @@ pub fn error_message(cx: &Cx, locale: &str, keys: &[&str]) -> Option<String> {
     if !keys.contains(&err) {
         return None;
     }
-    let i18n_key = match err {
-        "captcha" => "captcha_invalid",
-        "incorrect" => "sign_in_incorrect",
-        "not_activation" => "sign_in_not_activation",
-        "banned" => "sign_in_banned",
-        "security" => "sign_in_security_problem",
-        "password_weak" => "register_password_weak",
-        "password_mismatch" => "register_password_mismatch",
-        "exist" => "register_exist",
-        "payment" => "checkout_failed",
-        "invalid" => "checkout_invalid",
-        "stock" => "product_out_of_stock",
-        "slug_invalid" => "admin_form_slug_invalid",
-        "slug_exists" => "admin_form_slug_exists",
-        "title_invalid" => "admin_form_title_invalid",
-        "description_invalid" => "admin_form_description_invalid",
-        "price_invalid" => "admin_form_price_invalid",
-        "stock_invalid" => "admin_form_stock_invalid",
-        "create_failed" => "admin_form_create_failed",
-        "update_failed" => "admin_form_update_failed",
-        "upload_empty" => "admin_upload_empty",
-        "upload_too_large" => "admin_upload_too_large",
-        "upload_type" => "admin_upload_type_invalid",
-        "upload_failed" => "admin_upload_failed",
-        _ => return None,
-    };
+    let i18n_key = crate::common::constant::error_i18n_key(err)?;
     Some(loader::t(locale, i18n_key).to_string())
 }
 

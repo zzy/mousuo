@@ -143,6 +143,7 @@ pub async fn admin_upload_handler(cx: &Cx, mut form_data: Multipart) -> Result<R
     match result {
         Ok(url) => {
             let kind = if media::is_image_ext(ext) { "image" } else { "video" };
+            crate::app::notify::notify(cx, &format!("{kind} {url}"));
             Ok(form::redirect(&format!("{base}?ok={kind}&url={url}")))
         }
         Err(e) => {

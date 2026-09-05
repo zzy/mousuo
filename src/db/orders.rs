@@ -1,5 +1,6 @@
 use crate::common::constant::ORDER_STATUS_PENDING;
 use crate::db;
+
 use crate::models::order::{Order, OrderItem};
 use surrealdb::types::{SurrealValue, Value};
 
@@ -10,16 +11,16 @@ pub async fn create_order(
     total_cents: i64,
 ) -> Result<Order, String> {
     let items_json = serde_json::to_value(&items).map_err(|e| e.to_string())?;
-    let id = db::new_record_id("order");
+    let id = db::new_record_key();
     let db = db::get_db();
     let mut res = db
         .query(
-            "CREATE order CONTENT { id: $id, user_id: $user, items: $items, total_cents: $total, status: $status, created_at: time::now() }",
+            "CREATE order CONTENT { id: type::record('order', $id), user_id: $user_id, items: $items, total_cents: $total_cents, status: $status, created_at: time::now() }",
         )
-        .bind(("id", db::record_id(&id).map_err(|e| e.to_string())?))
-        .bind(("user", user_id.to_string()))
+        .bind(("id", id))
+        .bind(("user_id", user_id.to_string()))
         .bind(("items", items_json.into_value()))
-        .bind(("total", total_cents))
+        .bind(("total_cents", total_cents))
         .bind(("status", ORDER_STATUS_PENDING))
         .await
         .map_err(|e| e.to_string())?;
@@ -33,8 +34,8 @@ pub async fn create_order(
 /// 按 id 查订单
 pub async fn get_order_by_id(id: &str) -> Result<Option<Order>, String> {
     db::query_one(
-        "SELECT * FROM order WHERE id = $id",
-        &[("id", db::record_id(id)?)],
+        "SELECT *, id.id() AS id FROM order WHERE id = type::record('order', $id)",
+        &[("id", id.to_string().into_value())],
     )
     .await
 }
@@ -42,8 +43,8 @@ pub async fn get_order_by_id(id: &str) -> Result<Option<Order>, String> {
 /// 按 Stripe Session id 查订单（webhook 关联键）
 pub async fn find_order_by_session_id(session_id: &str) -> Result<Option<Order>, String> {
     db::query_one(
-        "SELECT * FROM order WHERE stripe_session_id = $sid",
-        &[("sid", session_id.to_string().into_value())],
+        "SELECT *, id.id() AS id FROM order WHERE stripe_session_id = $session_id",
+        &[("session_id", session_id.to_string().into_value())],
     )
     .await
 }
@@ -51,9 +52,9 @@ pub async fn find_order_by_session_id(session_id: &str) -> Result<Option<Order>,
 /// 回写 Stripe Session id
 pub async fn set_session_id(order_id: &str, session_id: &str) -> Result<(), String> {
     db::get_db()
-        .query("UPDATE $id SET stripe_session_id = $sid")
-        .bind(("id", db::record_id(order_id)?))
-        .bind(("sid", session_id.to_string()))
+        .query("UPDATE type::record('order', $id) SET stripe_session_id = $session_id")
+        .bind(("id", order_id.to_string()))
+        .bind(("session_id", session_id.to_string()))
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
@@ -62,8 +63,8 @@ pub async fn set_session_id(order_id: &str, session_id: &str) -> Result<(), Stri
 /// 置为已支付（webhook 验签与金额比对通过后调用）
 pub async fn mark_paid(order_id: &str) -> Result<(), String> {
     db::get_db()
-        .query("UPDATE $id SET status = $status, paid_at = time::now()")
-        .bind(("id", db::record_id(order_id)?))
+        .query("UPDATE type::record('order', $id) SET status = $status, paid_at = time::now()")
+        .bind(("id", order_id.to_string()))
         .bind(("status", "paid".to_string()))
         .await
         .map_err(|e| e.to_string())?;
@@ -78,9 +79,9 @@ pub async fn list_orders(
 ) -> Result<Vec<Order>, String> {
     let start = ((page - 1) * page_size) as i64;
     db::query_as(
-        "SELECT * FROM order WHERE user_id = $user ORDER BY created_at DESC LIMIT $limit START $start",
+        "SELECT *, id.id() AS id FROM order WHERE user_id = $user_id ORDER BY created_at DESC LIMIT $limit START $start",
         &[
-            ("user", user_id.to_string().into_value()),
+            ("user_id", user_id.to_string().into_value()),
             ("limit", (page_size as i64).into_value()),
             ("start", start.into_value()),
         ],
@@ -92,8 +93,8 @@ pub async fn list_orders(
 pub async fn count_orders(user_id: &str) -> Result<u64, String> {
     let db = db::get_db();
     let mut res = db
-        .query("SELECT count() FROM order WHERE user_id = $user GROUP ALL")
-        .bind(("user", user_id.to_string()))
+        .query("SELECT count() FROM order WHERE user_id = $user_id GROUP ALL")
+        .bind(("user_id", user_id.to_string()))
         .await
         .map_err(|e| e.to_string())?;
     let count: Option<u64> = res.take((0, "count")).map_err(|e| e.to_string())?;
@@ -104,7 +105,7 @@ pub async fn count_orders(user_id: &str) -> Result<u64, String> {
 pub async fn list_all_orders(page: u64, page_size: u64) -> Result<Vec<Order>, String> {
     let start = ((page - 1) * page_size) as i64;
     db::query_as(
-        "SELECT * FROM order ORDER BY created_at DESC LIMIT $limit START $start",
+        "SELECT *, id.id() AS id FROM order ORDER BY created_at DESC LIMIT $limit START $start",
         &[
             ("limit", (page_size as i64).into_value()),
             ("start", start.into_value()),
@@ -129,13 +130,13 @@ pub async fn count_all_orders() -> Result<u64, String> {
 pub async fn transition_status(order_id: &str, from: &str, to: &str) -> Result<bool, String> {
     let db = db::get_db();
     let sql = if to == crate::common::constant::ORDER_STATUS_CANCELLED {
-        "UPDATE $id SET status = $to, cancelled_at = time::now() WHERE status = $from"
+        "UPDATE type::record('order', $id) SET status = $to, cancelled_at = time::now() WHERE status = $from"
     } else {
-        "UPDATE $id SET status = $to WHERE status = $from"
+        "UPDATE type::record('order', $id) SET status = $to WHERE status = $from"
     };
     let mut res = db
         .query(sql)
-        .bind(("id", db::record_id(order_id)?))
+        .bind(("id", order_id.to_string()))
         .bind(("from", from.to_string()))
         .bind(("to", to.to_string()))
         .await

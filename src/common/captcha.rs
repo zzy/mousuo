@@ -46,7 +46,6 @@ pub async fn save_answer(cx: &Cx, answer: u8) -> Result<(), String> {
         return Ok(());
     };
     let id = session::encode_id(&hash);
-    let rid = db::record_id(&id).map_err(|e| e.to_string())?;
     let expires_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| e.to_string())?
@@ -55,20 +54,20 @@ pub async fn save_answer(cx: &Cx, answer: u8) -> Result<(), String> {
     let db = db::get_db();
     // 登录前的会话尚无记录：UPDATE 命中 0 行时必须补建，否则验证码无处存放
     let mut probe = db
-        .query("SELECT id FROM session WHERE id = $id")
-        .bind(("id", rid.clone()))
+        .query("SELECT id FROM session WHERE id = type::record('session', $id)")
+        .bind(("id", id.clone()))
         .await
         .map_err(|e| e.to_string())?;
     let rows: Vec<surrealdb::types::Value> = probe.take(0).map_err(|e| e.to_string())?;
     let sql = if rows.is_empty() {
-        "CREATE session CONTENT { id: $id, username: '', expires_at: $exp, captcha_answer: $ans, captcha_expires_at: $exp }"
+        "CREATE session CONTENT { id: type::record('session', $id), username: '', expires_at: $expires_at, captcha_answer: $answer, captcha_expires_at: $expires_at }"
     } else {
-        "UPDATE session SET captcha_answer = $ans, captcha_expires_at = $exp WHERE id = $id"
+        "UPDATE session SET captcha_answer = $answer, captcha_expires_at = $expires_at WHERE id = type::record('session', $id)"
     };
     db.query(sql)
-        .bind(("id", rid))
-        .bind(("ans", answer as i64))
-        .bind(("exp", expires_at as i64))
+        .bind(("id", id))
+        .bind(("answer", answer as i64))
+        .bind(("expires_at", expires_at as i64))
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
@@ -80,13 +79,10 @@ pub async fn verify(cx: &Cx, user_answer: &str) -> bool {
         return false;
     };
     let id = session::encode_id(&hash);
-    let Ok(rid) = db::record_id(&id) else {
-        return false;
-    };
     let db = db::get_db();
     let mut res = match db
-        .query("SELECT captcha_answer, captcha_expires_at FROM session WHERE id = $id")
-        .bind(("id", rid.clone()))
+        .query("SELECT captcha_answer, captcha_expires_at FROM session WHERE id = type::record('session', $id)")
+        .bind(("id", id.clone()))
         .await
     {
         Ok(r) => r,
@@ -123,8 +119,8 @@ pub async fn verify(cx: &Cx, user_answer: &str) -> bool {
     };
     // 无论对错，清除已使用的验证码
     let _ = db
-        .query("UPDATE $id SET captcha_answer = NONE, captcha_expires_at = NONE")
-        .bind(("id", rid))
+        .query("UPDATE type::record('session', $id) SET captcha_answer = NONE, captcha_expires_at = NONE")
+        .bind(("id", id))
         .await;
     correct
 }

@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 use surrealdb::Surreal;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
-use surrealdb::types::{SurrealValue, Value};
+use surrealdb::types::Value;
 use uuid::Uuid;
 
 pub mod orders;
@@ -56,31 +56,9 @@ pub(crate) fn from_value<T: DeserializeOwned>(v: &Value) -> Option<T> {
     serde_json::from_value(v.clone().into_json_value()).ok()
 }
 
-/// 将 record id 全形字符串（如 session:abc123）转为可绑定的 RecordId 值
-///
-/// 远端 3.2.4 实测语义（勿再踩）：
-/// - `id = $id` 比较绑定裸字符串：静默不匹配
-/// - `UPDATE $id` 绑定裸字符串：运行时报错 Cannot execute UPDATE statement
-/// - `CREATE ... CONTENT { id: $id }` 绑定裸字符串：整串当 key 写入
-/// - 正确形态：统一绑定本函数产出的 RecordId 值
-///
-/// 前提：key 只含 [0-9a-zA-Z_]（无 ⟨⟩/反引号/连字符），
-/// 否则全形字符串带引号，parse_simple 无法往返；
-/// 新 id 一律用 new_record_id / session hex key 生成。
-pub fn record_id(id: &str) -> Result<Value, String> {
-    surrealdb::types::RecordId::parse_simple(id)
-        .map(|rid| rid.into_value())
-        .map_err(|e| e.to_string())
-}
-
-/// 生成新 record id 全形字符串：table + 32 位 hex（无引号字符，可安全往返）
-/// 返回 `{table}:{uuid hex}`，绑定查询时再经 record_id 转 RecordId 值
-pub fn new_record_id(table: &str) -> String {
-    let mut id = String::with_capacity(table.len() + 33);
-    id.push_str(table);
-    id.push(':');
-    id.push_str(&Uuid::new_v4().simple().to_string());
-    id
+/// 生成新记录 key：32 位 hex（官方 ID_CHARS 安全字符集）
+pub fn new_record_key() -> String {
+    Uuid::new_v4().simple().to_string()
 }
 
 pub async fn query_as<T: DeserializeOwned>(

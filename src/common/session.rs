@@ -14,13 +14,10 @@ use topcoat::session::{
 
 use crate::db;
 
-/// TokenHash → SurrealDB record ID 全形字符串（session:64 位 hex）
-/// 字段比较 `id = $id` 需绑定 `db::record_id()` 的 RecordId 值，见 db.rs
+/// TokenHash → session 记录纯 key（64 位 hex）
+/// 表名只出现在 SQL 内（type::record 构造），Rust 侧零表名
 pub(crate) fn encode_id(hash: &TokenHash) -> String {
-    let mut id = String::with_capacity(8 + hash.as_ref().len() * 2);
-    id.push_str("session:");
-    id.push_str(&crate::common::rand::hex(hash.as_ref()));
-    id
+    crate::common::rand::hex(hash.as_ref())
 }
 
 // ── 会话 Cookie 载体 ──────────────────────────────────────────────────────
@@ -93,11 +90,10 @@ pub fn session_config() -> SessionConfig {
 /// 签发 session 时创建记录（验证码阶段可能已预建记录，此时改为更新）
 pub async fn create(hash: &TokenHash, username: &str, expires_at: u64) -> Result<(), String> {
     let id = encode_id(hash);
-    let rid = db::record_id(&id).map_err(|e| e.to_string())?;
     let db = db::get_db();
     let mut probe = db
-        .query("SELECT id FROM session WHERE id = $id")
-        .bind(("id", rid.clone()))
+        .query("SELECT id FROM session WHERE id = type::record('session', $id)")
+        .bind(("id", id.clone()))
         .await
         .map_err(|e| e.to_string())?;
     let rows: Vec<surrealdb::types::Value> = probe.take(0).map_err(|e| e.to_string())?;
@@ -105,22 +101,22 @@ pub async fn create(hash: &TokenHash, username: &str, expires_at: u64) -> Result
     let token = generate_csrf_token();
     if rows.is_empty() {
         db.query(
-            "CREATE session CONTENT { id: $id, username: $user, expires_at: $exp, csrf_token: $tok }",
+            "CREATE session CONTENT { id: type::record('session', $id), username: $username, expires_at: $expires_at, csrf_token: $token }",
         )
-        .bind(("id", rid))
-        .bind(("user", username.to_string()))
-        .bind(("exp", expires_at as i64))
-        .bind(("tok", token))
+        .bind(("id", id))
+        .bind(("username", username.to_string()))
+        .bind(("expires_at", expires_at as i64))
+        .bind(("token", token))
         .await
         .map_err(|e| e.to_string())?;
     } else {
         db.query(
-            "UPDATE session SET username = $user, expires_at = $exp, csrf_token = $tok WHERE id = $id",
+            "UPDATE session SET username = $username, expires_at = $expires_at, csrf_token = $token WHERE id = type::record('session', $id)",
         )
-        .bind(("id", rid))
-        .bind(("user", username.to_string()))
-        .bind(("exp", expires_at as i64))
-        .bind(("tok", token))
+        .bind(("id", id))
+        .bind(("username", username.to_string()))
+        .bind(("expires_at", expires_at as i64))
+        .bind(("token", token))
         .await
         .map_err(|e| e.to_string())?;
     }
@@ -132,8 +128,8 @@ pub async fn resolve(hash: &TokenHash) -> Result<Option<String>, String> {
     let id = encode_id(hash);
     let db = db::get_db();
     let mut res = db
-        .query("SELECT username, expires_at FROM session WHERE id = $id")
-        .bind(("id", db::record_id(&id).map_err(|e| e.to_string())?))
+        .query("SELECT username, expires_at FROM session WHERE id = type::record('session', $id)")
+        .bind(("id", id))
         .await
         .map_err(|e| e.to_string())?;
     let raw: Vec<surrealdb::types::Value> = res.take(0).map_err(|e| e.to_string())?;
@@ -160,8 +156,8 @@ pub async fn resolve(hash: &TokenHash) -> Result<Option<String>, String> {
 pub async fn remove(hash: &TokenHash) -> Result<(), String> {
     let id = encode_id(hash);
     let db = db::get_db();
-    db.query("DELETE session WHERE id = $id")
-        .bind(("id", db::record_id(&id).map_err(|e| e.to_string())?))
+    db.query("DELETE session WHERE id = type::record('session', $id)")
+        .bind(("id", id))
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
@@ -170,8 +166,8 @@ pub async fn remove(hash: &TokenHash) -> Result<(), String> {
 /// 删除某用户的全部会话（封禁/密码重置后踢下线）
 pub async fn remove_all(username: &str) -> Result<(), String> {
     let db = db::get_db();
-    db.query("DELETE session WHERE username = $user")
-        .bind(("user", username.to_string()))
+    db.query("DELETE session WHERE username = $username")
+        .bind(("username", username.to_string()))
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
@@ -181,23 +177,14 @@ pub async fn remove_all(username: &str) -> Result<(), String> {
 pub async fn remove_all_except(hash: &TokenHash, username: &str) -> Result<(), String> {
     let id = encode_id(hash);
     let db = db::get_db();
-    db.query("DELETE session WHERE username = $user AND id != $id")
-        .bind(("user", username.to_string()))
-        .bind(("id", db::record_id(&id).map_err(|e| e.to_string())?))
+    db.query("DELETE session WHERE username = $username AND id != type::record('session', $id)")
+        .bind(("username", username.to_string()))
+        .bind(("id", id))
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
 }
 
-/// 清理所有过期 session（运维工具，按需调用）
-#[allow(dead_code)]
-pub async fn cleanup() -> Result<(), String> {
-    let db = db::get_db();
-    db.query("DELETE session WHERE expires_at <= time::now()")
-        .await
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
 
 // ── CSRF 防护 ─────────────────────────────────────────────────────────────
 
@@ -215,11 +202,10 @@ pub fn ct_eq(a: &str, b: &str) -> bool {
 pub async fn ensure_csrf_token(cx: &Cx) -> Option<String> {
     let hash = topcoat::session::token_hash(cx).await.ok()??;
     let id = encode_id(&hash);
-    let rid = db::record_id(&id).ok()?;
     let db = db::get_db();
     let mut probe = db
-        .query("SELECT csrf_token FROM session WHERE id = $id")
-        .bind(("id", rid.clone()))
+        .query("SELECT csrf_token FROM session WHERE id = type::record('session', $id)")
+        .bind(("id", id.clone()))
         .await
         .ok()?;
     let rows: Vec<surrealdb::types::Value> = probe.take(0).ok()?;
@@ -233,13 +219,13 @@ pub async fn ensure_csrf_token(cx: &Cx) -> Option<String> {
     }
     let token = generate_csrf_token();
     let sql = if rows.is_empty() {
-        "CREATE session CONTENT { id: $id, username: '', expires_at: 0, csrf_token: $tok }"
+        "CREATE session CONTENT { id: type::record('session', $id), username: '', expires_at: 0, csrf_token: $token }"
     } else {
-        "UPDATE session SET csrf_token = $tok WHERE id = $id"
+        "UPDATE session SET csrf_token = $token WHERE id = type::record('session', $id)"
     };
     db.query(sql)
-        .bind(("id", rid))
-        .bind(("tok", token.clone()))
+        .bind(("id", id))
+        .bind(("token", token.clone()))
         .await
         .ok()?;
     Some(token)
@@ -254,13 +240,10 @@ pub async fn verify_csrf(cx: &Cx, submitted: &str) -> bool {
         return false;
     };
     let id = encode_id(&hash);
-    let Ok(rid) = db::record_id(&id) else {
-        return false;
-    };
     let db = db::get_db();
     let mut res = match db
-        .query("SELECT csrf_token FROM session WHERE id = $id")
-        .bind(("id", rid))
+        .query("SELECT csrf_token FROM session WHERE id = type::record('session', $id)")
+        .bind(("id", id))
         .await
     {
         Ok(r) => r,

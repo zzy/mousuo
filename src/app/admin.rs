@@ -1,4 +1,4 @@
-//! 管理域（P3）— 路由均受 AdminGuard 层保护（未登录 302、非管理员 404）
+//! 管理域 — 路由均受 AdminGuard 层保护（未登录 302、非管理员 404）
 
 pub mod orders;
 pub mod products;

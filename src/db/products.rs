@@ -1,5 +1,6 @@
 use crate::common::constant::PRODUCT_STATUS_ACTIVE;
 use crate::db;
+
 use crate::models::product::Product;
 use surrealdb::types::{SurrealValue, Value};
 
@@ -32,7 +33,7 @@ pub async fn list_products(
     params.push(("limit", (page_size as i64).into_value()));
     params.push(("start", start.into_value()));
     let sql = format!(
-        "SELECT * FROM product{where_clause} ORDER BY created_at DESC, id LIMIT $limit START $start"
+        "SELECT *, id.id() AS id FROM product{where_clause} ORDER BY created_at DESC, id LIMIT $limit START $start"
     );
     db::query_as(&sql, &params).await
 }
@@ -54,7 +55,7 @@ pub async fn count_products(search: Option<&str>) -> Result<u64, String> {
 /// 按 slug 查详情（仅上架）
 pub async fn get_product_by_slug(slug: &str) -> Result<Option<Product>, String> {
     db::query_one(
-        "SELECT * FROM product WHERE slug = $slug AND status = $status",
+        "SELECT *, id.id() AS id FROM product WHERE slug = $slug AND status = $status",
         &[
             ("slug", slug.to_string().into_value()),
             ("status", PRODUCT_STATUS_ACTIVE.into_value()),
@@ -66,7 +67,7 @@ pub async fn get_product_by_slug(slug: &str) -> Result<Option<Product>, String> 
 /// 按 slug 查商品（含下架，管理端唯一性校验用）
 pub async fn get_product_by_slug_any(slug: &str) -> Result<Option<Product>, String> {
     db::query_one(
-        "SELECT * FROM product WHERE slug = $slug",
+        "SELECT *, id.id() AS id FROM product WHERE slug = $slug",
         &[("slug", slug.to_string().into_value())],
     )
     .await
@@ -76,7 +77,7 @@ pub async fn get_product_by_slug_any(slug: &str) -> Result<Option<Product>, Stri
 pub async fn list_all_products(page: u64, page_size: u64) -> Result<Vec<Product>, String> {
     let start = ((page - 1) * page_size) as i64;
     db::query_as(
-        "SELECT * FROM product ORDER BY created_at DESC, id LIMIT $limit START $start",
+        "SELECT *, id.id() AS id FROM product ORDER BY created_at DESC, id LIMIT $limit START $start",
         &[
             ("limit", (page_size as i64).into_value()),
             ("start", start.into_value()),
@@ -131,17 +132,17 @@ pub async fn create_product(
     stock: i64,
     image: Option<&str>,
 ) -> Result<Product, String> {
-    let id = db::new_record_id("product");
+    let id = db::new_record_key();
     let db = db::get_db();
     let mut res = db
         .query(
-            "CREATE product CONTENT { id: $id, slug: $slug, title: $title, description: $description, price_cents: $price, stock: $stock, image: $image, status: $status, created_at: time::now() }",
+            "CREATE product CONTENT { id: type::record('product', $id), slug: $slug, title: $title, description: $description, price_cents: $price_cents, stock: $stock, image: $image, status: $status, created_at: time::now() }",
         )
-        .bind(("id", db::record_id(&id).map_err(|e| e.to_string())?))
+        .bind(("id", id))
         .bind(("slug", slug.to_string()))
         .bind(("title", title.to_string()))
         .bind(("description", description.to_string()))
-        .bind(("price", price_cents))
+        .bind(("price_cents", price_cents))
         .bind(("stock", stock))
         .bind(("image", image.filter(|s| !s.is_empty()).map(str::to_string).into_value()))
         .bind(("status", PRODUCT_STATUS_ACTIVE))
@@ -166,13 +167,13 @@ pub async fn update_product(
 ) -> Result<(), String> {
     db::get_db()
         .query(
-            "UPDATE $id SET slug = $slug, title = $title, description = $description, price_cents = $price, stock = $stock, image = $image",
+            "UPDATE type::record('product', $id) SET slug = $slug, title = $title, description = $description, price_cents = $price_cents, stock = $stock, image = $image",
         )
-        .bind(("id", db::record_id(product_id)?))
+        .bind(("id", product_id.to_string()))
         .bind(("slug", slug.to_string()))
         .bind(("title", title.to_string()))
         .bind(("description", description.to_string()))
-        .bind(("price", price_cents))
+        .bind(("price_cents", price_cents))
         .bind(("stock", stock))
         .bind(("image", image.filter(|s| !s.is_empty()).map(str::to_string).into_value()))
         .await
@@ -183,8 +184,8 @@ pub async fn update_product(
 /// 上架/下架（管理端）
 pub async fn set_product_status(product_id: &str, status: &str) -> Result<(), String> {
     db::get_db()
-        .query("UPDATE $id SET status = $status")
-        .bind(("id", db::record_id(product_id)?))
+        .query("UPDATE type::record('product', $id) SET status = $status")
+        .bind(("id", product_id.to_string()))
         .bind(("status", status.to_string()))
         .await
         .map_err(|e| e.to_string())?;
@@ -211,17 +212,17 @@ pub async fn delete_product(product_id: &str) -> Result<(), String> {
         None => return Err("商品不存在".to_string()),
     };
     db::get_db()
-        .query("DELETE product WHERE id = $id")
-        .bind(("id", db::record_id(product_id)?))
+        .query("DELETE product WHERE id = type::record('product', $id)")
+        .bind(("id", product_id.to_string()))
         .await
         .map_err(|e| e.to_string())?;
     // 仅清理无其他商品引用的媒体（误删复用在用文件）
     for url in media_refs {
         let mut res = db::get_db()
             .query(
-                "SELECT id FROM product WHERE id != $id AND (image = $url OR description CONTAINS $url)",
+                "SELECT id FROM product WHERE id != type::record('product', $id) AND (image = $url OR description CONTAINS $url)",
             )
-            .bind(("id", db::record_id(product_id)?))
+            .bind(("id", product_id.to_string()))
             .bind(("url", url.clone()))
             .await
             .map_err(|e| e.to_string())?;
@@ -238,8 +239,8 @@ pub async fn delete_product(product_id: &str) -> Result<(), String> {
 /// 按 id 查商品（含下架，checkout 校验与订单回链用）
 pub async fn get_product_by_id(id: &str) -> Result<Option<Product>, String> {
     db::query_one(
-        "SELECT * FROM product WHERE id = $id",
-        &[("id", db::record_id(id)?)],
+        "SELECT *, id.id() AS id FROM product WHERE id = type::record('product', $id)",
+        &[("id", id.to_string().into_value())],
     )
     .await
 }
@@ -248,8 +249,8 @@ pub async fn get_product_by_id(id: &str) -> Result<Option<Product>, String> {
 pub async fn decrement_stock(product_id: &str, qty: i64) -> Result<bool, String> {
     let db = db::get_db();
     let mut res = db
-        .query("UPDATE $id SET stock = stock - $qty WHERE stock >= $qty")
-        .bind(("id", db::record_id(product_id)?))
+        .query("UPDATE type::record('product', $id) SET stock = stock - $qty WHERE stock >= $qty")
+        .bind(("id", product_id.to_string()))
         .bind(("qty", qty))
         .await
         .map_err(|e| e.to_string())?;
@@ -371,15 +372,15 @@ pub async fn seed_products() -> Result<(), String> {
     }
     for item in SEED_PRODUCTS {
         let image = format!("https://picsum.photos/seed/{}/800/600", item.slug);
-        let id = db::new_record_id("product");
+        let id = db::new_record_key();
         db.query(
-            "CREATE product CONTENT { id: $id, slug: $slug, title: $title, description: $description, price_cents: $price, stock: $stock, image: $image, status: $status, created_at: time::now() }",
+            "CREATE product CONTENT { id: type::record('product', $id), slug: $slug, title: $title, description: $description, price_cents: $price_cents, stock: $stock, image: $image, status: $status, created_at: time::now() }",
         )
-        .bind(("id", db::record_id(&id).map_err(|e| e.to_string())?))
+        .bind(("id", id))
         .bind(("slug", item.slug.to_string()))
         .bind(("title", item.title.to_string()))
         .bind(("description", item.description.to_string()))
-        .bind(("price", item.price_cents))
+        .bind(("price_cents", item.price_cents))
         .bind(("stock", item.stock))
         .bind(("image", image))
         .bind(("status", PRODUCT_STATUS_ACTIVE))

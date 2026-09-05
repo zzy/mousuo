@@ -6,6 +6,8 @@ use crate::common::constant::{USER_IS_ADMIN, USER_STATUS_ACTIVE, USER_STATUS_BAN
 use crate::common::{form, session};
 use crate::components;
 use crate::components::badge::{BadgeVariant, badge};
+use crate::components::button::{ButtonSize, ButtonVariant, button_variants};
+use crate::components::csrf::CsrfField;
 use crate::components::status_badge::warning_badge;
 use crate::db::users;
 use crate::i18n::loader;
@@ -46,11 +48,14 @@ pub async fn admin_users_list(cx: &Cx) -> Result<impl View> {
     let current_username = auth::current_user(cx).await.unwrap_or_default();
     let current_names: Vec<String> = std::iter::repeat(current_username).take(n).collect();
     // 操作成功横幅（?ok=updated 封禁解封 / ?ok=role 任免）
-    let notice = match form::query_param(cx, "ok").as_deref() {
-        Some("updated") => Some(loader::t(locale, "admin_user_updated").to_string()),
-        Some("role") => Some(loader::t(locale, "admin_role_updated").to_string()),
-        _ => None,
-    };
+    let notice = super::notice(
+        cx,
+        &locale,
+        &[
+            ("updated", "admin_user_updated"),
+            ("role", "admin_role_updated"),
+        ],
+    );
     Ok(view! {
         <div class="max-w-6xl mx-auto px-4 py-8">
             components::admin_nav::AdminNav(
@@ -61,7 +66,7 @@ pub async fn admin_users_list(cx: &Cx) -> Result<impl View> {
                 (loader::t(&locale, "admin_users"))
             </h1>
             if let Some(ref msg) = notice {
-                <p class="text-green-600 text-sm mb-4">(msg.clone())</p>
+                <p class="text-sm text-green-600 mb-4">(msg.clone())</p>
             }
             if user_list.is_empty() {
                 <p class="text-muted-foreground py-16 text-center">
@@ -98,8 +103,8 @@ pub async fn admin_users_list(cx: &Cx) -> Result<impl View> {
 #[component]
 async fn AdminUserRow(locale: String, user: User, csrf: String, current_username: String) -> Result<impl View> {
     let status_key = match user.status {
-        USER_STATUS_BANNED => "user_status_banned",
         USER_STATUS_ACTIVE => "user_status_active",
+        USER_STATUS_BANNED => "user_status_banned",
         _ => "user_status_pending",
     };
     let ban_url = format!("/{locale}/admin/users/{}/status", user.id);
@@ -117,9 +122,9 @@ async fn AdminUserRow(locale: String, user: User, csrf: String, current_username
         "banned"
     };
     let ban_variant = if user.status == USER_STATUS_BANNED {
-        BadgeVariant::Secondary
+        ButtonVariant::Secondary
     } else {
-        BadgeVariant::Destructive
+        ButtonVariant::Destructive
     };
     // view! 分支按 move 捕获：封禁/任免两个互斥分支各自使用独立克隆
     let ban_csrf = csrf.clone();
@@ -164,12 +169,12 @@ async fn AdminUserRow(locale: String, user: User, csrf: String, current_username
                     // 管理员行：非自己可取消管理员；自己无任免按钮（护栏）
                     if !is_self {
                         <form method="POST" action=(role_url) class="inline">
-                            <input type="hidden" name="csrf_token" value=(role_csrf)>
+                            CsrfField(token: role_csrf)
                             <button
                                 type="submit"
                                 name="role"
                                 value="user"
-                                class="inline-flex shrink-0 items-center justify-center border font-medium whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 h-8 gap-1.5 rounded-md px-3 text-xs border-border text-foreground shadow-xs hover:bg-foreground/5 active:bg-foreground/10"
+                                class=(button_variants(ButtonVariant::Secondary, ButtonSize::Sm))
                             >
                                 (loader::t(&locale, "admin_user_demote"))
                             </button>
@@ -178,30 +183,23 @@ async fn AdminUserRow(locale: String, user: User, csrf: String, current_username
                 } else {
                     // 非管理员行：封禁/解封 + 设为管理员
                     <form method="POST" action=(ban_url) class="inline">
-                        <input type="hidden" name="csrf_token" value=(ban_csrf)>
+                        CsrfField(token: ban_csrf)
                         <button
                             type="submit"
                             name="to"
                             value=(ban_value)
-                            class=(format!(
-                                "inline-flex shrink-0 items-center justify-center border font-medium whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 h-8 gap-1.5 rounded-md px-3 text-xs {}",
-                                if ban_variant == BadgeVariant::Destructive {
-                                    "border-transparent bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90 active:bg-destructive/80"
-                                } else {
-                                    "border-border text-foreground shadow-xs hover:bg-foreground/5 active:bg-foreground/10"
-                                },
-                            ))
+                            class=(button_variants(ban_variant, ButtonSize::Sm))
                         >
                             (ban_label)
                         </button>
                     </form>
                     <form method="POST" action=(role_url) class="inline">
-                        <input type="hidden" name="csrf_token" value=(role_csrf)>
+                        CsrfField(token: role_csrf)
                         <button
                             type="submit"
                             name="role"
                             value="admin"
-                            class="inline-flex shrink-0 items-center justify-center border font-medium whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 h-8 gap-1.5 rounded-md px-3 text-xs border-border text-foreground shadow-xs hover:bg-foreground/5 active:bg-foreground/10"
+                            class=(button_variants(ButtonVariant::Secondary, ButtonSize::Sm))
                         >
                             (loader::t(&locale, "admin_user_promote"))
                         </button>
