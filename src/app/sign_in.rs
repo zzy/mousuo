@@ -22,7 +22,7 @@ use topcoat::{
         content::Form, error::{bad_request, forbidden}, path_param_segment, query_params,
         response::Response,
     },
-    runtime::Event,
+    runtime::{Event, signal},
     view::{View, attributes, component, view},
 };
 
@@ -133,6 +133,7 @@ pub async fn sign_out_action(cx: &Cx, Form(form): Form<SignOutForm>) -> Result<R
 
 #[component]
 async fn SignInCard(
+    cx: &Cx,
     locale: String,
     error_message: Option<String>,
     next: String,
@@ -140,8 +141,8 @@ async fn SignInCard(
     csrf: String,
 ) -> Result<impl View> {
     let cap_locale = locale.clone();
+    let captcha_nonce = signal(cx, || 0.0);
     Ok(view! {
-        signal captcha_nonce = 0.0;
         auth_dialog(
             locale: locale.clone(),
             width: AuthDialogWidth::SignIn,

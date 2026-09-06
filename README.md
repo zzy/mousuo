@@ -1,6 +1,6 @@
 # MouSuo - 眸索
 
-> 眸 (móu, the eye, a discerning gaze), 索 (suǒ, to seek, to search out).
+> 眸(móu), the eye, a discerning gaze; 索(suǒ), to seek, to search out.
 
 A cross-border e-commerce trial built on [topcoat](https://github.com/tokio-rs/topcoat) and [surrealdb](https://surrealdb.com/) - all Rust, single binary.
 

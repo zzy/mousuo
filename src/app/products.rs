@@ -17,7 +17,7 @@ use topcoat::{
     Result,
     context::Cx,
     router::{page, path_param_segment, query_params},
-    runtime::{Event, shard},
+    runtime::{Event, shard, signal},
     view::{View, attributes, view},
 };
 
@@ -38,10 +38,10 @@ pub async fn products_list(cx: &Cx) -> Result<impl View> {
         .unwrap_or("")
         .to_string();
     let list_error = form::error_message(cx, &locale, &["invalid"]);
-    Ok(view! {
-        signal query = initial_q;
-        signal locale_sig = locale.to_string();
+    let query = signal(cx, move || initial_q);
+    let locale_sig = signal(cx, || locale.to_string());
 
+    Ok(view! {
         <div class="max-w-6xl mx-auto px-4 py-8">
             <h1 class="text-xl font-bold mb-6 text-foreground">
                 (loader::t(&locale, "nav_products"))

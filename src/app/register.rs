@@ -27,7 +27,7 @@ use topcoat::{
     router::{
         content::Form, error::{bad_request, forbidden}, path_param_segment, query_params, response::Response,
     },
-    runtime::Event,
+    runtime::{Event, signal},
     view::{View, attributes, component, view},
 };
 
@@ -294,6 +294,7 @@ pub async fn resend_action(cx: &Cx, Form(form): Form<ResendForm>) -> Result<Resp
 
 #[component]
 async fn RegisterCard(
+    cx: &Cx,
     locale: String,
     error_message: Option<String>,
     success_username: Option<String>,
@@ -302,8 +303,8 @@ async fn RegisterCard(
 ) -> Result<impl View> {
     let intro_default = "## About Me".to_string();
     let cap_locale = locale.clone();
+    let captcha_nonce = signal(cx, || 0.0);
     Ok(view! {
-        signal captcha_nonce = 0.0;
         auth_dialog(
             locale: locale.clone(),
             width: AuthDialogWidth::Register,
