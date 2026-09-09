@@ -1,10 +1,12 @@
 use crate::common::config;
 use serde::de::DeserializeOwned;
 use std::sync::OnceLock;
+use std::time::Duration;
 use surrealdb::Surreal;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::types::Value;
+use tokio::time::timeout;
 use uuid::Uuid;
 
 pub mod orders;
@@ -14,34 +16,50 @@ pub mod users;
 
 static DB: OnceLock<Surreal<Client>> = OnceLock::new();
 
+/// 启动连接超时：DB 不可达时快速失败并打印明确错误，避免进程无输出地假启动
+const DB_INIT_TIMEOUT: Duration = Duration::from_secs(10);
+
 pub async fn init() {
     let cfg = config::config();
-    let db = Surreal::new::<Ws>(&cfg.db_url)
-        .await
-        .unwrap_or_else(|e| panic!("connect {}: {e}", cfg.db_url));
+    timeout(DB_INIT_TIMEOUT, async {
+        let db = Surreal::new::<Ws>(&cfg.db_url)
+            .await
+            .unwrap_or_else(|e| panic!("connect {}: {e}", cfg.db_url));
 
-    db.signin(Root {
-        username: cfg.db_user.clone(),
-        password: cfg.db_pass.clone(),
+        db.signin(Root {
+            username: cfg.db_user.clone(),
+            password: cfg.db_pass.clone(),
+        })
+        .await
+        .unwrap_or_else(|e| panic!("auth: {e}"));
+
+        db.use_ns(&cfg.db_ns)
+            .await
+            .unwrap_or_else(|e| panic!("ns: {e}"));
+        db.use_db(&cfg.db_name)
+            .await
+            .unwrap_or_else(|e| panic!("db: {e}"));
+
+        DB.set(db).expect("DB already set");
+
+        get_db()
+            .query("RETURN 1")
+            .await
+            .unwrap_or_else(|e| panic!("db health check: {e}"));
+
+        eprintln!(
+            "  SurrealDB connected {}/{}/{}",
+            cfg.db_url, cfg.db_ns, cfg.db_name
+        );
     })
     .await
-    .unwrap_or_else(|e| panic!("auth: {e}"));
-
-    db.use_ns(&cfg.db_ns)
-        .await
-        .unwrap_or_else(|e| panic!("ns: {e}"));
-    db.use_db(&cfg.db_name)
-        .await
-        .unwrap_or_else(|e| panic!("db: {e}"));
-
-    DB.set(db).expect("DB already set");
-
-    get_db()
-        .query("RETURN 1")
-        .await
-        .unwrap_or_else(|e| panic!("db health check: {e}"));
-
-    eprintln!("  SurrealDB connected {}/{}/{}", cfg.db_url, cfg.db_ns, cfg.db_name);
+    .unwrap_or_else(|_| {
+        panic!(
+            "connect {} timeout ({}s)",
+            cfg.db_url,
+            DB_INIT_TIMEOUT.as_secs()
+        )
+    });
 }
 
 pub fn get_db() -> &'static Surreal<Client> {
