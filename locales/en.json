@@ -1,6 +1,6 @@
 {
     "lang": "English",
-    "site_name": "MouSuo",
+    "site_name": "mousuo",
     "site_slogan": "Global Goods",
     "site_slogan_ext": "Quality picks, chosen with care",
     "home_latest": "New Arrivals",
@@ -67,7 +67,7 @@
     "captcha_label": "Security check",
     "captcha_placeholder": "Enter result",
     "captcha_invalid": "Incorrect answer, try again",
-    "email_activation_subject": "MouSuo - Account Activation",
+    "email_activation_subject": "mousuo - Account Activation",
     "email_activation_body": "Please click the link below to activate your account:",
     "user_activated": "Account activated, please sign in",
     "user_activate_problem": "Activation link is invalid or expired",
@@ -154,6 +154,6 @@
     "reset_password_title": "Set New Password",
     "reset_password_submit": "Save new password",
     "reset_password_invalid": "Reset link is invalid or expired",
-    "email_reset_subject": "MouSuo - Password Reset",
+    "email_reset_subject": "mousuo - Password Reset",
     "email_reset_body": "Click the link below to set a new password (valid for 1 hour):"
 }

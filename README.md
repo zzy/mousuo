@@ -1,4 +1,4 @@
-# MouSuo - 眸索
+# mousuo - 眸索
 
 > 眸(móu), the eye, a discerning gaze; 索(suǒ), to seek, to search out.
 

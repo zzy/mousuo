@@ -1,6 +1,6 @@
 {
     "lang": "中文",
-    "site_name": "MouSuo",
+    "site_name": "眸索",
     "site_slogan": "全球好物",
     "site_slogan_ext": "精选优质商品，件件用心",
     "home_latest": "最新上架",
@@ -67,7 +67,7 @@
     "captcha_label": "安全验证",
     "captcha_placeholder": "输入算式结果",
     "captcha_invalid": "验证码错误，请重试",
-    "email_activation_subject": "MouSuo - 账户激活",
+    "email_activation_subject": "眸索 - 账户激活",
     "email_activation_body": "请点击以下链接激活您的账户：",
     "user_activated": "账户已激活，请签入",
     "user_activate_problem": "激活链接无效或已过期",
@@ -154,6 +154,6 @@
     "reset_password_title": "设置新密码",
     "reset_password_submit": "保存新密码",
     "reset_password_invalid": "重置链接无效或已过期",
-    "email_reset_subject": "MouSuo - 密码重置",
+    "email_reset_subject": "眸索 - 密码重置",
     "email_reset_body": "请点击以下链接设置新密码（1 小时内有效）："
 }

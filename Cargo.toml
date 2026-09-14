@@ -2,7 +2,7 @@
 name = "mousuo"
 version = "0.1.0"
 edition = "2024"
-description = "MouSuo — 跨境电商试水"
+description = "mousuo — 跨境电商试水"
 
 [dependencies]
 topcoat = { path = "../tmp/topcoat/crates/topcoat", features = [
