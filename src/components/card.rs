@@ -11,8 +11,8 @@ use topcoat::{
 /// casts the theme's raised-surface shadow and sets its own background and
 /// text color, so it reads as a card on any ancestor.
 const CARD: StaticClass = class!(
-    "flex flex-col gap-5 rounded-xl border border-border bg-background py-6 \
-     text-foreground shadow-sm",
+    "flex flex-col gap-5 rounded-xl border border-border bg-card py-6 \
+     text-card-foreground shadow-sm",
 );
 
 /// A card component: a bordered, raised surface grouping related content.
@@ -70,7 +70,10 @@ pub async fn card_title(
     #[default] child: Child<'_>,
 ) -> Result<impl View> {
     Ok(view! {
-        <h3 class=(class!("leading-none font-semibold", attrs.remove("class"))) (attrs)>
+        <h3
+            class=(class!("text-base leading-none font-semibold", attrs.remove("class")))
+            (attrs)
+        >
             (child)
         </h3>
     })
