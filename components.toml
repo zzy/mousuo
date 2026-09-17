@@ -21,13 +21,13 @@ hash = "sha256:1710cf2f5e770ca79701e1627e4cbcecde06c4f8a2e2e20e8f3e7e53ff6095bc"
 file = 'src/components\card.rs'
 
 [registries.topcoat.components.dialog]
-hash = "sha256:a130a75122cf1d101d7a947c4a60a0ac4ff0936f94a6b3189df8a1830c0400e0"
+hash = "sha256:eaa498ec8594a2bc5efcb40ba6d4c68786777c21c0f40b9190611e6cb9298d7a"
 file = 'src/components\dialog.rs'
 
 [registries.topcoat.components.input]
-hash = "sha256:f9fcaea3a33c22a113c3f155bc2eb1fb24aff733d9d3788ba276f3dcaddbd456"
+hash = "sha256:9c25bea17bce0197b7b0851056aec6ee620571bc808b2efea509c81bdd529748"
 file = 'src/components\input.rs'
 
 [registries.topcoat.components.label]
-hash = "sha256:adf485332c812de581f3ee0521368ac57845c68d939ed61dc991f6bf324ec619"
+hash = "sha256:24c035a7774068891b4a2aca6dc4e73f670ac392c54cb34a49a3b841976f5bf3"
 file = 'src/components\label.rs'
