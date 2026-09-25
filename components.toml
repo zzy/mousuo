@@ -9,25 +9,25 @@ hash = "sha256:9b8dd006bb2ef088367c7f2cb69d6f664a49506cb20867e95676d8668b84d815"
 file = "styles.css"
 
 [registries.topcoat.components.badge]
-hash = "sha256:afc8ee3fe9c9cbc1e165c59619b38705427cac958eb582d3e434492e7153d328"
+hash = "sha256:988a382e98e8676f956fb66b39cd3c1d81a3f7abda420d57888cc3aed15d807e"
 file = 'src/components\badge.rs'
 
 [registries.topcoat.components.button]
-hash = "sha256:ce730323806d2271631921b90d72ba32783273355e76dcaa8fc67fb263843d20"
+hash = "sha256:88a3e926618f1063a98d2f0fe00126505838cfe4ae1d4b9029b83fa0d5c29b89"
 file = 'src/components\button.rs'
 
 [registries.topcoat.components.card]
-hash = "sha256:552c8813cc5f7e92d9fcda2396879e767b6ab62855564def85d5d4c9b613e055"
+hash = "sha256:fa432d78bd7cbaa563fb24538193aa4e827113facc1a6b430ebb710cfb0a4305"
 file = 'src/components\card.rs'
 
 [registries.topcoat.components.dialog]
-hash = "sha256:8289cf41540ffbadabeac252e5a2ad89e70b70d658373ffdd4aced0c7cc21b68"
+hash = "sha256:a9395fc38e945fed74ebeb466431f4dfdc6e3220301b55131c1139fe2366be7a"
 file = 'src/components\dialog.rs'
 
 [registries.topcoat.components.input]
-hash = "sha256:e5762661d16b17bf479954410e153de6fd481ad413ae747bff7624817749fee3"
+hash = "sha256:b35dab40cbdbe8de979cc46cda816ebd375a0304c121b5e0a6fe4eb55228f3d7"
 file = 'src/components\input.rs'
 
 [registries.topcoat.components.label]
-hash = "sha256:eec79916849fdcbeff20d063e897f7a255289af2d929742f97e4abc111d89146"
+hash = "sha256:7a1bebf3afd0d48f937a490411344b8e8761c2eeaa89b2358da9de1462b9591d"
 file = 'src/components\label.rs'
