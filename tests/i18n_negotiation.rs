@@ -1,7 +1,7 @@
 //! i18n 协商与通用辅助函数的纯函数测试（无 DB 依赖，cargo test 直接跑）
 
-use cangnu::common::form::safe_next;
-use cangnu::i18n::loader::{negotiate_language, normalize_locale_path, swap_locale};
+use mousuo::common::form::safe_next;
+use mousuo::i18n::loader::{negotiate_language, normalize_locale_path, swap_locale};
 
 #[test]
 fn normalize_canonical_supported_path_passes_through() {

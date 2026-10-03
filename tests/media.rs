@@ -1,6 +1,6 @@
 //! 媒体模块纯函数测试（MIME 白名单、content-type、目录穿越防护、媒体引用提取）
 
-use cangnu::common::media::{
+use mousuo::common::media::{
     content_type_for_path, extract_media_urls, is_image_ext, mime_to_extension, safe_relative,
 };
 use std::path::PathBuf;

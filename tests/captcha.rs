@@ -1,6 +1,6 @@
 //! 验证码生成纯函数测试（答案与 SVG 表达式一致性）
 
-use cangnu::common::captcha;
+use mousuo::common::captcha;
 
 /// 从 SVG 提取主表达式文本（左操作数/运算符/右操作数/=）
 /// 渲染顺序：噪点在前，表达式四个文本在最后

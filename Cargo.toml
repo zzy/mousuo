@@ -1,8 +1,8 @@
 [package]
-name = "cangnu"
+name = "mousuo"
 version = "0.1.0"
 edition = "2024"
-description = "cangnu — 苍弩 媒体内容管理"
+description = "mousuo — 眸索 媒体内容管理"
 
 [dependencies]
 topcoat = { path = "../tmp/topcoat/crates/topcoat", features = [

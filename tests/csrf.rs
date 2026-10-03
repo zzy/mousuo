@@ -1,6 +1,6 @@
 //! CSRF token 纯函数测试（恒定时间比较与随机生成）
 
-use cangnu::common::session::{ct_eq, generate_csrf_token};
+use mousuo::common::session::{ct_eq, generate_csrf_token};
 
 #[test]
 fn ct_eq_compares_identical_strings() {

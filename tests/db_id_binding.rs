@@ -12,7 +12,7 @@
 //! - 单记录 UPDATE 的返回是对象而非数组：读取必须用 Vec<Value>，
 //!   Option<Vec<Value>> 会报 Expected array<any>, got object
 
-use cangnu::db;
+use mousuo::db;
 use surrealdb::types::Value;
 
 const KEY: &str = "abc123";

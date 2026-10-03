@@ -1,13 +1,13 @@
 services:
   app:
-    image: ghcr.io/zzy/cangnu:latest
+    image: ghcr.io/zzy/mousuo:latest
     restart: always
     ports:
       - "7700:7700"
     env_file:
       - .env
     volumes:
-      - /root/cangnu-uploads:/app/data/media
+      - /root/mousuo-uploads:/app/data/media
     networks:
       - surrealdb_net
 

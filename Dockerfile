@@ -21,10 +21,10 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /build/target/release/cangnu /app/
+COPY --from=builder /build/target/release/mousuo /app/
 COPY --from=builder /build/target/release/assets /app/assets
 
 WORKDIR /app
 ENV HOST=0.0.0.0
 ENV PORT=7700
-CMD ["./cangnu"]
+CMD ["./mousuo"]
