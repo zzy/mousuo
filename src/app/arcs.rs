@@ -222,7 +222,7 @@ async fn arc_grid(cx: &Cx, query: String, type_key: String) -> Result<impl View>
 pub async fn arc_detail(cx: &Cx) -> Result<impl View> {
     let locale = path_param_segment(cx, "locale");
     let slug = path_param_segment(cx, "slug");
-    let found = arcs::get_arc_by_slug(&slug).await.ok().flatten();
+    let found = arcs::get_arc_by_slug(cx, &slug).await.ok().flatten();
     let body_html = found
         .as_ref()
         .and_then(|e| e.body.as_deref())
@@ -251,6 +251,20 @@ pub async fn arc_detail(cx: &Cx) -> Result<impl View> {
     } else {
         String::new()
     };
+    // JSON-LD 结构化数据：图文富媒体结果
+    let article_ld = found.as_ref().map(|a| {
+        crate::common::markdown::json_ld(&serde_json::json!({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": a.title,
+            "image": a.thumbnail,
+            "datePublished": a.created_at,
+            "author": a.author_name.as_deref().map(|n| serde_json::json!({
+                "@type": "Person",
+                "name": n,
+            })),
+        }))
+    });
     Ok(view! {
         <div class="max-w-4xl mx-auto px-4 py-8">
             if let Some(ref arc) = found {
@@ -340,6 +354,11 @@ pub async fn arc_detail(cx: &Cx) -> Result<impl View> {
                     )
                 }
                 crate::components::hls_player::HlsScan()
+                if let Some(ld) = article_ld {
+                    <script type="application/ld+json">
+                        (topcoat::view::Unescaped::new_unchecked(ld))
+                    </script>
+                }
             } else {
                 (topcoat::router::StatusCode::NOT_FOUND)
                 <div class="text-center py-16">

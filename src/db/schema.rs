@@ -41,7 +41,6 @@ pub async fn ensure_tables() -> Result<(), String> {
          DEFINE FIELD IF NOT EXISTS summary ON arc TYPE option<string>;
          DEFINE FIELD IF NOT EXISTS thumbnail ON arc TYPE option<string>;
          DEFINE FIELD IF NOT EXISTS media_url ON arc TYPE option<string>;
-         DEFINE FIELD IF NOT EXISTS author_id ON arc TYPE option<string>;
          DEFINE FIELD IF NOT EXISTS author_name ON arc TYPE option<string>;
          DEFINE FIELD IF NOT EXISTS topics ON arc TYPE option<string>;
          DEFINE FIELD IF NOT EXISTS created_at ON arc TYPE datetime;

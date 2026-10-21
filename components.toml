@@ -17,11 +17,11 @@ hash = "sha256:fc9f669ce86ed8da737194a2b2b86e9a2c9d228a74d3dda722abe7491e45a260"
 file = 'src/components\button.rs'
 
 [registries.topcoat.components.card]
-hash = "sha256:0a89712262f12b7d9ba50910bd428d2822aeaf337f12713972c6bfe7cfcf6d0c"
+hash = "sha256:33e80b4bf557bfcc82b58aa5c17be183ac3b3ce58ae6d30e9c38caac6f8b1621"
 file = 'src/components\card.rs'
 
 [registries.topcoat.components.dialog]
-hash = "sha256:0f331fad73a593e947b8929dc1ad2cd008dcb9de459f00953755010613eea95f"
+hash = "sha256:ded35cf079d34f46c3c04f832232fbc1088727137eab72be01946d6208fb8036"
 file = 'src/components\dialog.rs'
 
 [registries.topcoat.components.input]
@@ -29,5 +29,5 @@ hash = "sha256:8d883758a7af36eded71e849f83caf3fdb705549168f49af63adbb23d35d7c36"
 file = 'src/components\input.rs'
 
 [registries.topcoat.components.label]
-hash = "sha256:0d9702e0daf06a1cc59b630aabc363559d30f1cb9e13aa0d69809394a47cbc4d"
+hash = "sha256:715357314c8de31102fb8eac5272f19e61e486862ee0ee76c23e74f4f76f0410"
 file = 'src/components\label.rs'

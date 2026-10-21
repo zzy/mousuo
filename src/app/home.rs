@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use crate::common::config;
 use crate::common::icons;
 use crate::components;
 use crate::db::arcs;
@@ -30,6 +31,13 @@ pub async fn locale_home(cx: &Cx) -> Result<impl View> {
 #[component]
 async fn HomeContent(cx: &Cx, locale: String) -> Result<impl View> {
     let (videos, articles, photos) = arcs::get_home_arcs(cx, 12).await.unwrap_or_default();
+    // JSON-LD 结构化数据：站点信息
+    let site_ld = crate::common::markdown::json_ld(&serde_json::json!({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": loader::t(&locale, "site_name"),
+        "url": format!("https://{}", config::config().domain),
+    }));
     Ok(view! {
         <main class="max-w-6xl mx-auto px-4 py-8">
             <div class="mb-10 text-center">
@@ -40,6 +48,9 @@ async fn HomeContent(cx: &Cx, locale: String) -> Result<impl View> {
                     (loader::t(&locale, "site_slogan_ext"))
                 </p>
             </div>
+            <script type="application/ld+json">
+                (topcoat::view::Unescaped::new_unchecked(site_ld))
+            </script>
             if videos.is_empty() && articles.is_empty() && photos.is_empty() {
                 <div class="text-center py-16">
                     <p class="text-base text-muted-foreground">

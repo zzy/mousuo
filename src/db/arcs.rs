@@ -103,12 +103,22 @@ pub async fn get_arc_by_id(id: &str) -> Result<Option<Arc>, String> {
     .await
 }
 
-pub async fn get_arc_by_slug(slug: &str) -> Result<Option<Arc>, String> {
+/// 按 slug 查详情（memoize：布局标题与详情页同请求共享，零重复查询）
+#[topcoat::context::memoize(as_ref)]
+async fn arc_by_slug(cx: &topcoat::context::Cx, slug: &str) -> Result<Option<Arc>, String> {
     db::query_one(
         "SELECT *, id.id() AS id FROM arc WHERE slug = $slug",
         &[("slug", slug.to_string().into_value())],
     )
     .await
+}
+
+/// 公开接口（委托 memoize 的 arc_by_slug）
+pub async fn get_arc_by_slug(cx: &topcoat::context::Cx, slug: &str) -> Result<Option<Arc>, String> {
+    arc_by_slug(cx, slug)
+        .await
+        .map(|o| o.clone())
+        .map_err(|e| e.to_string())
 }
 
 /// slug 合法性：小写字母/数字/连字符，不以连字符开头或结尾，长度 2..=64

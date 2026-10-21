@@ -33,8 +33,6 @@ pub struct Arc {
     pub thumbnail: Option<String>,
     #[serde(rename = "media_url")]
     pub media_url: Option<String>,
-    #[serde(rename = "author_id")]
-    pub author_id: Option<String>,
     #[serde(rename = "author_name")]
     pub author_name: Option<String>,
     pub topics: Option<String>,
